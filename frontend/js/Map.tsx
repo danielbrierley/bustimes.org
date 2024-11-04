@@ -99,8 +99,8 @@ function MapChild({ onInit }: { onInit?: (map: MapLibreMap) => void }) {
   useEffect(() => {
     if (map) {
       const _map = map.getMap();
-      _map.keyboard.disableRotation();
-      _map.touchZoomRotate.disableRotation();
+      // _map.keyboard.disableRotation();
+      // _map.touchZoomRotate.disableRotation();
 
       if (onInit) {
         onInit(_map);
@@ -204,7 +204,6 @@ export default function BusTimesMap(
         touchPitch={false}
         pitchWithRotate={false}
         dragRotate={false}
-        minZoom={2}
         maxZoom={18}
         mapStyle={`https://tiles.stadiamaps.com/styles/${mapStyle}.json`}
         RTLTextPlugin={""}
