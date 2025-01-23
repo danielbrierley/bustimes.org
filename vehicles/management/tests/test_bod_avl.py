@@ -924,6 +924,8 @@ class BusOpenDataVehicleLocationsTest(TestCase):
         command.source = self.source
         # command.get_operator.cache_clear()
 
+        livery = Livery.objects.create(id=164, name="White", published=True)
+        
         vehicle = Vehicle.objects.create(
             operator_id="TNXB", code="4407", fleet_code="4407", fleet_number=4407
         )
