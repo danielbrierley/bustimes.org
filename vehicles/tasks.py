@@ -25,10 +25,10 @@ from .models import (
 
 
 @functools.cache
-def get_bod_avl_command(source_name: str):
+def get_bod_avl_command(source: DataSource):
     command = import_bod_avl.Command()
-    command.source_name = source_name
-    command.do_source()
+    command.source = source
+    command.source_name = source.name
     return command
 
 
@@ -38,7 +38,7 @@ def handle_siri_post(uuid, data: dict):
 
     data = data["Siri"]
 
-    subscription = SiriSubscription.objects.get(uuid=uuid)
+    subscription = SiriSubscription.objects.select_related("source").get(uuid=uuid)
 
     if "HeartbeatNotification" in data:
         timestamp = datetime.fromisoformat(
@@ -49,7 +49,7 @@ def handle_siri_post(uuid, data: dict):
     else:
         data = data["ServiceDelivery"]
 
-        command = get_bod_avl_command(subscription.name)
+        command = get_bod_avl_command(subscription.source)
 
         items = data["VehicleMonitoringDelivery"]["VehicleActivity"]
 

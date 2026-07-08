@@ -544,7 +544,9 @@ class VehicleCodeAdmin(admin.ModelAdmin):
 
 @admin.register(models.SiriSubscription)
 class SiriSubscriptionAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["source"]
     readonly_fields = ["uuid", "sample", "status"]
+    list_display = ["__str__", "source"]
 
     def status(self, obj):
         return cache.get(obj.get_status_key())

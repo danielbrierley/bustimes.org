@@ -96,15 +96,20 @@ def handle_situation(element, source, current_situations):
             with atomic():
                 situation.save()
 
+                trip = trips[0]
+                time = datetime.fromisoformat(avj.findtext("OriginAimedDepartureTime"))
+                date = time.date()
+                if trip.start.days:
+                    date -= timedelta(days=1)
+
                 journey, created = AffectedJourney.objects.update_or_create(
                     {
                         "condition": element.findtext(
                             "Consequences/Consequence/Condition"
                         ),
-                        "trip": trips[0],
-                        "origin_departure_time": avj.findtext(
-                            "OriginAimedDepartureTime"
-                        ),
+                        "trip": trip,
+                        "date": date,
+                        "origin_departure_time": time,
                     },
                     situation=situation,
                 )
