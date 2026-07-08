@@ -38,6 +38,7 @@ class Situation(models.Model):
     )
     situation_number = models.CharField(max_length=36, blank=True)
     reason = models.CharField(max_length=25, blank=True)
+    severity = models.CharField(max_length=25, blank=True)
     summary = models.CharField(max_length=255, blank=True, help_text="(title)")
     show_summary = models.BooleanField(default=True)
     participant_ref = models.CharField(max_length=36, blank=True)
@@ -193,6 +194,7 @@ class Consequence(models.Model):
 class AffectedJourney(models.Model):
     situation = models.ForeignKey(Situation, models.CASCADE)
     trip = models.ForeignKey("bustimes.Trip", models.CASCADE)
+    date = models.DateField(null=True, blank=True)
     origin_departure_time = models.DateTimeField(null=True, blank=True)
     condition = models.CharField()  # cancelled, altered, etc
 

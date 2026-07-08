@@ -846,6 +846,7 @@ class SiriSubscription(models.Model):
         unique=True,
         help_text="There should be a DataSource with the same name as this",
     )
+    source = models.ForeignKey(DataSource, models.CASCADE, null=True)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     sample = models.TextField(null=True, blank=True)
     producer_url = models.URLField(null=True, blank=True, max_length=64)
