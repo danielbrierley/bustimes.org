@@ -51,7 +51,7 @@ def situation(request, id):
 
     return render(
         request,
-        "situations_index.html",
+        "situation_detail.html",
         {
             **context,
             "situation": situation,
