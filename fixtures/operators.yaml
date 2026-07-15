@@ -204,3 +204,10 @@ TWET:
 SABE:
   name: S L Bell Minibuses
   url: https://minibusesinpembrokeshire.co.uk/
+BHAT:
+  url: https://www.newbharat.co.uk/daily-timetable/
+SLBS: // NOC incorrectly has a random space before the operator name
+  name: Select Bus Services
+SSSN:
+  name: Shoreline Travel
+  url: www.shorelinetravel.co.uk/
