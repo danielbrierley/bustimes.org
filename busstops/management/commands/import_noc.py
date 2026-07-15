@@ -162,7 +162,7 @@ class Command(BaseCommand):
             # op = operators_by_id[e.findtext("OpId")]
             public_name = public_names[e.findtext("PubNmId")]
 
-            name = public_name.findtext("OperatorPublicName")
+            name = public_name.findtext("OperatorPublicName").strip()
 
             url = public_name.findtext("Website")
             if url:
