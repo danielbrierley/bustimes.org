@@ -167,24 +167,36 @@ class SiriPostTest(TestCase):
                 },
             ),
         ):
-            response = self.client.post(
-                "/overland/475d1d1f-5708-4ee1-8f51-c63d948bc0b9",
-                data={
-                    "locations": [
-                        {
-                            "type": "Feature",
-                            "geometry": {"type": "Point", "coordinates": [-48.3, 52.3]},
-                            "properties": {
-                                "timestamp": "2023-12-15T08:24:05Z",
-                                "device_id": "NADT:MB182:34:1982",
-                            },
-                        }
-                    ]
-                },
-                content_type="application/json",
-            )
-            self.assertEqual(200, response.status_code)
-            self.assertEqual(response.text, """{"result": "ok"}""")
+            uuid = "475d1d1f-5708-4ee1-8f51-c63d948bc0b9"
+            data = {
+                "locations": [
+                    {
+                        "type": "Feature",
+                        "geometry": {"type": "Point", "coordinates": [-48.3, 52.3]},
+                        "properties": {
+                            "timestamp": "2023-12-15T08:24:05Z",
+                            "device_id": "NADT:MB182:34:1982",
+                        },
+                    }
+                ]
+            }
+
+            for response in (
+                self.client.post(
+                    f"/overland/{uuid}", data, content_type="application/json"
+                ),
+                self.client.post(
+                    "/overland",
+                    data,
+                    content_type="application/json",
+                    headers={"Authorization": f"Bearer {uuid}"},
+                ),
+            ):
+                self.assertEqual(200, response.status_code)
+                self.assertEqual(response.text, """{"result": "ok"}""")
+
+            with self.assertRaises(KeyError):
+                self.client.post("/overland", data, content_type="application/json")
 
             response = self.client.get("/siri/475d1d1f-5708-4ee1-8f51-c63d948bc0b9")
             self.assertEqual(response.headers["Content-Type"], "application/json")

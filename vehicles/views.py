@@ -1139,7 +1139,12 @@ def siri_post(request, uuid):
 
 @csrf_exempt
 @require_POST
-def overland(request, uuid):
+def overland(request, uuid=None):
+    # https://github.com/aaronpk/Overland-iOS#api
+
+    if uuid is None:
+        uuid = request.headers["Authorization"].removeprefix("Bearer ")
+
     subscription = get_object_or_404(SiriSubscription, uuid=uuid)
 
     data = json.loads(request.body)
