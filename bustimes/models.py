@@ -501,6 +501,7 @@ class StopTime(models.Model):
     departure = SecondsField(null=True, blank=True)
     sequence = models.PositiveSmallIntegerField(null=True, blank=True)
     timing_status = models.CharField(max_length=3, blank=True)
+    timing_point = models.BooleanField(null=True, blank=True)
     pick_up = models.BooleanField(default=True)
     set_down = models.BooleanField(default=True)
     notes = models.ManyToManyField(Note, blank=True)
