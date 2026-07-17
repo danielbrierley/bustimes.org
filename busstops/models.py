@@ -1016,7 +1016,7 @@ class Service(models.Model):
             "trip__inbound",
             "sequence",
             "stop_id",
-            "timing_status",
+            "timing_point",
         )
         stop_usages = [
             (
@@ -1024,7 +1024,7 @@ class Service(models.Model):
                 st["trip__inbound"],
                 st["sequence"] or 0,
                 st["stop_id"],
-                st["timing_status"],
+                st["timing_point"],
             )
             for st in stop_times
         ]
@@ -1034,7 +1034,7 @@ class Service(models.Model):
             StopUsage(
                 service=self,
                 stop_id=stop_id,
-                timing_point=(timing_status == "PTP"),
+                timing_point=timing_point,
                 inbound=inbound,
                 order=i,
                 line_name=line_name,
@@ -1044,7 +1044,7 @@ class Service(models.Model):
                 inbound,
                 sequence,
                 stop_id,
-                timing_status,
+                timing_point,
             ) in enumerate(stop_usages)
         ]
 

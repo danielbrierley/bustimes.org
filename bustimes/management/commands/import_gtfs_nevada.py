@@ -156,6 +156,7 @@ class Command(BaseCommand):
                 sequence=row.stop_sequence,
                 trip=trip,
                 timing_status="PTP" if row.timepoint else "OTH",
+                timing_point=bool(row.timepoint),
                 pick_up=(row.pickup_type != 1),
                 set_down=(row.drop_off_type != 1),
             )

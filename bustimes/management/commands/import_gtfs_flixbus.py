@@ -188,8 +188,11 @@ class Command(BaseCommand):
                 # (a bit pointless as I think all their stops are timing points and/or they leave this column blank)
                 if pd.notna(row.timepoint) and row.timepoint == 1:
                     stop_time.timing_status = "PTP"
+                    stop_time.timing_point = True
+
                 else:
                     stop_time.timing_status = "OTH"
+                    stop_time.timing_point = False
 
                 if row.stop_id in stop_codes:
                     stop_time.stop_id = stop_codes[row.stop_id]
@@ -227,9 +230,10 @@ class Command(BaseCommand):
         )
 
         # if no timing points specified (because FlixBus), set all stops as timing points
-        if all(stop_time.timing_status == "OTH" for stop_time in stop_times):
+        if not any(stop_time.timing_point for stop_time in stop_times):
             for stop_time in stop_times:
                 stop_time.timing_status = "PTP"
+                stop_time.timing_point = True
 
         with transaction.atomic():
             existing_trips = [trip for trip in trips.values() if trip.id]

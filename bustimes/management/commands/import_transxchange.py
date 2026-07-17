@@ -332,6 +332,7 @@ def get_stop_time(trip, cell, stops: dict):
         trip=trip,
         sequence=cell.stopusage.sequencenumber,
         timing_status=timing_status,
+        timing_point=(timing_status != "OTH"),
     )
     if (
         stop_time.sequence is not None and stop_time.sequence > 32767
