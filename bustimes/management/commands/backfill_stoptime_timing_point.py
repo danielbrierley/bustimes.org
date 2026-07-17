@@ -1,5 +1,7 @@
 import time
 
+from tqdm import tqdm
+
 from django.core.management.base import BaseCommand
 from django.db import connection
 
@@ -25,17 +27,22 @@ class Command(BaseCommand):
             self.stdout.write("Nothing to do")
             return
 
-        while start_id <= max_id:
-            end_id = start_id + batch_size - 1
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    UPDATE bustimes_stoptime
-                    SET timing_point = (timing_status != 'OTH')
-                    WHERE id BETWEEN %s AND %s AND timing_point IS NULL
-                    """,
-                    [start_id, end_id],
-                )
-                self.stdout.write(f"{start_id}-{end_id}: {cursor.rowcount} rows")
-            start_id = end_id + 1
-            time.sleep(sleep)
+        # progress is tracked over the id range, not exact row count, to
+        # avoid an upfront COUNT(*) scan of the whole table
+        with tqdm(total=max_id - start_id + 1, unit="id", unit_scale=True) as bar:
+            while start_id <= max_id:
+                end_id = start_id + batch_size - 1
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        UPDATE bustimes_stoptime
+                        SET timing_point = (timing_status != 'OTH')
+                        WHERE id BETWEEN %s AND %s AND timing_point IS NULL
+                        """,
+                        [start_id, end_id],
+                    )
+                    bar.set_postfix(rows=cursor.rowcount)
+                batch_ids = min(end_id, max_id) - start_id + 1
+                bar.update(batch_ids)
+                start_id = end_id + 1
+                time.sleep(sleep)
