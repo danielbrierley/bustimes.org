@@ -1002,6 +1002,7 @@ class Command(BaseCommand):
                 for stop_time in stop_times:
                     if not stop_time.timing_status:
                         stop_time.timing_status = "OTH"
+                        stop_time.timing_point = False
 
             for note_code, note_text in journey.notes.items():
                 note = self.get_note(note_code, note_text)

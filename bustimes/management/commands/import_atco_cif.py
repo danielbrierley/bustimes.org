@@ -310,7 +310,9 @@ class Command(BaseCommand):
                 self.exceptions.append(line)
 
             case b"QO" | b"QI" | b"QT":  # stop time
-                stop_time = StopTime(sequence=self.sequence, trip=self.trip)
+                stop_time = StopTime(
+                    sequence=self.sequence, trip=self.trip, timing_point=True
+                )
                 self.sequence += 1
 
                 stop_id = line[2:14].decode().strip()
@@ -364,6 +366,7 @@ class Command(BaseCommand):
                     stop_time.arrival = parse_time(line[14:18])
                     stop_time.departure = parse_time(line[18:22])
                     stop_time.timing_status = timing_status
+                    stop_time.timing_point = timing_status != "OTH"
 
                 elif identity == b"QT":  # destination stop
                     stop_time.arrival = parse_time(line[14:18])
