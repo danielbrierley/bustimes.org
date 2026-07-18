@@ -492,7 +492,7 @@ class Trip(models.Model):
 
 class StopTime(models.Model):
     id = models.BigAutoField(primary_key=True)
-    trip = models.ForeignKey(Trip, models.CASCADE)
+    trip = models.ForeignKey(Trip, models.CASCADE, db_index=False)
     stop_code = models.CharField(max_length=255, blank=True)
     stop = models.ForeignKey(
         "busstops.StopPoint", models.DO_NOTHING, null=True, blank=True
