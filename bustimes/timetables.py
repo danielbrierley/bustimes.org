@@ -731,7 +731,7 @@ class Grouping:
                 for key in result
             ]
             for row in self.rows:
-                row.timing_status = stop_times[row.stop.stop_code].timing_status
+                row.timing_point = stop_times[row.stop.stop_code].timing_point
 
     def sort_columns(self):
         rows = self.rows
@@ -872,7 +872,7 @@ class Grouping:
 
                 if instruction[0] == "+":
                     row = Row(Stop(stoptime.stop_id, stoptime.stop_code), [""] * x)
-                    row.timing_status = stoptime.timing_status
+                    row.timing_point = stoptime.timing_point
                     if not existing_row:
                         rows.append(row)
                     else:
@@ -1012,7 +1012,7 @@ class Grouping:
         if self.has_minor_stops() and not self.has_major_stops():
             for row in self.rows:
                 if row.stop and row.stop.timing_status:
-                    row.timing_status = row.stop.timing_status
+                    row.timing_point = row.stop.timing_status != "OTH"
 
 
 class ColumnHead:
@@ -1076,7 +1076,7 @@ class Row:
 
 class Stop:
     def __init__(self, stop_id, stop_code=None):
-        self.timing_status = None
+        self.timing_point = None
         self.atco_code = stop_id
         self.stop_code = stop_code or stop_id
 

@@ -500,7 +500,6 @@ class StopTime(models.Model):
     arrival = SecondsField(null=True, blank=True)
     departure = SecondsField(null=True, blank=True)
     sequence = models.PositiveSmallIntegerField(null=True, blank=True)
-    timing_status = models.CharField(max_length=3, blank=True)
     timing_point = models.BooleanField(null=True, blank=True)
     pick_up = models.BooleanField(default=True)
     set_down = models.BooleanField(default=True)
@@ -554,8 +553,11 @@ class StopTime(models.Model):
         if self.departure is not None:
             return time_datetime(self.departure, date, tzinfo)
 
+    def timing_status(self):
+        return "PTP" if self.timing_point else "OTH"
+
     def is_minor(self):
-        return self.timing_status and self.timing_status != "PTP"
+        return self.timing_point is False
 
 
 class Garage(models.Model):

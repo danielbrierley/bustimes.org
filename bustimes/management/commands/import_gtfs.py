@@ -235,12 +235,11 @@ class Command(BaseCommand):
         with (
             connection.cursor() as cursor,
             cursor.copy(
-                "COPY bustimes_stoptime (stop_id, arrival, departure, sequence, trip_id, timing_status, timing_point, pick_up, set_down, stop_code) FROM STDIN"
+                "COPY bustimes_stoptime (stop_id, arrival, departure, sequence, trip_id, timing_point, pick_up, set_down, stop_code) FROM STDIN"
             ) as copy,
         ):
             for line in feed.stop_times.itertuples():
-                timing_status = "PTP" if getattr(line, "timepoint", 1) == 1 else "OTH"
-                timing_point = timing_status != "OTH"
+                timing_point = bool(getattr(line, "timepoint", 1))
 
                 pick_up = None
                 match line.pickup_type:
@@ -268,7 +267,6 @@ class Command(BaseCommand):
                         departure,
                         line.stop_sequence,
                         trips[line.trip_id].pk,
-                        timing_status,
                         timing_point,
                         pick_up,
                         set_down,

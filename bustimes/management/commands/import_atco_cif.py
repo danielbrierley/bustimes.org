@@ -356,17 +356,15 @@ class Command(BaseCommand):
                 elif identity == b"QI":  # intermediate stop
                     timing_status = line[26:28]
                     if timing_status == b"T1":
-                        timing_status = "PTP"
+                        stop_time.timing_point = True
                     elif timing_status == b"T0":
-                        timing_status = "OTH"
+                        stop_time.timing_point = False
                     else:
                         print(line)
                         return
 
                     stop_time.arrival = parse_time(line[14:18])
                     stop_time.departure = parse_time(line[18:22])
-                    stop_time.timing_status = timing_status
-                    stop_time.timing_point = timing_status != "OTH"
 
                 elif identity == b"QT":  # destination stop
                     stop_time.arrival = parse_time(line[14:18])

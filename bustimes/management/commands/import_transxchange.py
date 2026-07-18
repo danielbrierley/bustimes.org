@@ -331,7 +331,6 @@ def get_stop_time(trip, cell, stops: dict):
     stop_time = StopTime(
         trip=trip,
         sequence=cell.stopusage.sequencenumber,
-        timing_status=timing_status,
         timing_point=(timing_status != "OTH"),
     )
     if (
@@ -892,6 +891,7 @@ class Command(BaseCommand):
         default_calendar = None
 
         stop_times = []
+        stop_time_blanks = []
 
         trips = []
         trip_notes = []
@@ -967,8 +967,9 @@ class Command(BaseCommand):
                 if stop_time.sequence is None:
                     stop_time.sequence = sequence
                 stop_times.append(stop_time)
+                stop_time_blanks.append(not cell.stopusage.timingstatus)
 
-                if not stop_time.timing_status:
+                if not cell.stopusage.timingstatus:
                     blank = True
 
                 if cell.notes:
@@ -997,11 +998,10 @@ class Command(BaseCommand):
             if trip.start == trip.end:
                 logger.warning(f"{route.code} trip {trip} takes no time")
 
-            if blank and any(stop_time.timing_status for stop_time in stop_times):
+            if blank and any(not b for b in stop_time_blanks):
                 # not all timing statuses are blank - mark any blank ones as minor
-                for stop_time in stop_times:
-                    if not stop_time.timing_status:
-                        stop_time.timing_status = "OTH"
+                for stop_time, is_blank in zip(stop_times, stop_time_blanks):
+                    if is_blank:
                         stop_time.timing_point = False
 
             for note_code, note_text in journey.notes.items():
