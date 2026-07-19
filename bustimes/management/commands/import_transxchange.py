@@ -316,23 +316,18 @@ def do_route_links(journeys, transxchange, stops, service):
 
 
 def get_stop_time(trip, cell, stops: dict):
-    timing_status = cell.stopusage.timingstatus or ""
-    if len(timing_status) > 3:
-        match timing_status:
-            case "otherPoint":
-                timing_status = "OTH"
-            case "timeInfoPoint":
-                timing_status = "TIP"
-            case "principleTimingPoint" | "principalTimingPoint":
-                timing_status = "PTP"
-            case _:
-                logger.warning(timing_status)
-
     stop_time = StopTime(
         trip=trip,
         sequence=cell.stopusage.sequencenumber,
-        timing_point=(timing_status != "OTH"),
     )
+    match cell.stopusage.timingstatus:
+        case "otherPoint" | "OTH" | "TIP" | "PPT":
+            stop_time.timing_point = False
+        case "timeInfoPoint" | "PTP" | "principleTimingPoint" | "principalTimingPoint":
+            stop_time.timing_point = True
+        case _:
+            logger.warning("timing status %s", cell.stopusage.timingstatus)
+
     if (
         stop_time.sequence is not None and stop_time.sequence > 32767
     ):  # too big for smallint
@@ -346,6 +341,10 @@ def get_stop_time(trip, cell, stops: dict):
         case "pass":
             stop_time.pick_up = False
             stop_time.set_down = False
+        case "pickUpAndSetDown" | None:
+            pass
+        case _:
+            logger.warning("activity %s", cell.activity)
 
     stop_time.departure = cell.departure_time
     if cell.arrival_time != cell.departure_time:
