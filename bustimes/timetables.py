@@ -569,13 +569,13 @@ class Grouping:
     def has_set_down_only(self):
         for row in self.rows:
             for cell in row.times:
-                if type(cell) is Cell and cell.set_down_only():
+                if type(cell) is Cell and not cell.last and cell.set_down_only():
                     return True
 
     def has_pick_up_only(self):
         for row in self.rows:
             for cell in row.times:
-                if type(cell) is Cell and cell.pick_up_only():
+                if type(cell) is Cell and not cell.first and cell.pick_up_only():
                     return True
 
     def has_after_midnight(self):
@@ -1046,11 +1046,17 @@ class Row:
 
     @cached_property
     def set_down_only(self) -> bool:
-        return all(cell.set_down_only() for cell in self.times if type(cell) is Cell)
+        cells = [cell for cell in self.times if type(cell) is Cell]
+        return all(cell.set_down_only() for cell in cells) and not all(
+            cell.last for cell in cells
+        )
 
     @cached_property
     def pick_up_only(self) -> bool:
-        return all(cell.pick_up_only() for cell in self.times if type(cell) is Cell)
+        cells = [cell for cell in self.times if type(cell) is Cell]
+        return all(cell.pick_up_only() for cell in cells) and not all(
+            cell.first for cell in cells
+        )
 
     @cached_property
     def note(self):
@@ -1107,11 +1113,9 @@ class Cell:
         return format_timedelta(self.departure, plus_one=True)
 
     def set_down_only(self):
-        if not self.last:
-            if self.stoptime.set_down and not self.stoptime.pick_up:
-                return True
+        if self.stoptime.set_down and not self.stoptime.pick_up:
+            return True
 
     def pick_up_only(self):
-        if not self.first:
-            if self.stoptime.pick_up and not self.stoptime.set_down:
-                return True
+        if self.stoptime.pick_up and not self.stoptime.set_down:
+            return True
