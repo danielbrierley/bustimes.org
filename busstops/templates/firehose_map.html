@@ -2,6 +2,11 @@
 
 {% load static %}
 
+{% block header %}
+    {{ block.super }}
+    <div id="skew"></div>
+{% endblock header %}
+
 {% block footer %}
     <link rel="stylesheet" href="{% static 'dist/js/firehose-map.css' %}">
     <script src="{% static 'dist/js/firehose-map.js' %}"></script>

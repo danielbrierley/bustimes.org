@@ -313,6 +313,7 @@ class ImportLiveVehiclesCommand(BaseCommand):
 
         geoadd = []
         sadd = {}
+        items = []
 
         for location, vehicle in self.to_save:
             if not location.latlong or (
@@ -352,6 +353,7 @@ class ImportLiveVehiclesCommand(BaseCommand):
                 location.journey.trip = None
 
             redis_json = location.get_redis_json(tz=self.tzinfo)
+            items.append(redis_json)
             pipeline.set(
                 f"vehicle{vehicle.id}",
                 json.dumps(redis_json),
@@ -377,15 +379,13 @@ class ImportLiveVehiclesCommand(BaseCommand):
             logger.exception(e)
 
         channel_layer = get_channel_layer()
-        if channel_layer is not None:
+        if channel_layer is not None and items:
             group_send = async_to_sync(channel_layer.group_send)
-            # TODO: use redis_json or suttin?
-            # but this will suffice as a proof of concept
             group_send(
                 "vehicle_locations",
                 {
                     "type": "move_vehicles",
-                    "items": geoadd,
+                    "items": items,
                 },
             )
 
