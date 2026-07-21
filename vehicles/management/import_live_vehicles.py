@@ -388,6 +388,14 @@ class ImportLiveVehiclesCommand(BaseCommand):
                     "items": items,
                 },
             )
+            for item in items:
+                group_send(
+                    f"vehicle_location{item['id']}",
+                    {
+                        "type": "move_vehicles",
+                        "items": [item],
+                    },
+                )
 
         self.to_save = []
 

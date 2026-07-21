@@ -105,21 +105,8 @@ map.on("load", () => {
 });
 
 const wsProtocol = window.location.protocol === "http:" ? "ws" : "wss";
-const ws = new WebSocket(`${wsProtocol}://${window.location.host}/firehose`);
 
 const statusBar = document.getElementById("skew");
-
-ws.onopen = (event) => {
-  if (statusBar) {
-    statusBar.innerText = "connected";
-  }
-};
-
-ws.onclose = (event) => {
-  if (statusBar) {
-    statusBar.innerText = "disconnected";
-  }
-};
 
 const vehicles = new Map(); // Track all vehicles by id
 
@@ -156,52 +143,77 @@ const popupHTML = (props: VehicleProps) => {
     props.line_name &&
       `<strong>${props.line_name}</strong>${props.destination ? ` to ${props.destination}` : ""}`,
     when,
-    `<a href="/vehicles/${props.id}">vehicle ${props.id}</a>`,
+    `<a href="#${props.id}">vehicle ${props.id}</a>`,
   ]
     .filter(Boolean)
     .join("<br>");
 };
 
-ws.onmessage = (event) => {
-  const message = JSON.parse(event.data);
-  const items: VehicleItem[] = message.items || [];
+const vehicleId = window.location.hash.slice(1);
+const wsPath = vehicleId ? `/firehose/${vehicleId}` : "/firehose";
 
-  for (const item of items) {
-    vehicles.set(item.id, {
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: item.coordinates,
-      },
-      properties: {
-        id: item.id,
-        heading: item.heading ?? 0,
-        datetime: item.datetime,
-        destination: item.destination,
-        line_name: item.service?.line_name,
-        colour: randomColour(),
-      },
-    });
+const connect = () => {
+  const ws = new WebSocket(`${wsProtocol}://${window.location.host}${wsPath}`);
 
-    if (openPopup && openPopupId === item.id) {
-      openPopup.setLngLat(item.coordinates).setHTML(
-        popupHTML({
+  ws.onopen = () => {
+    if (statusBar) {
+      statusBar.replaceChildren("connected");
+    }
+  };
+
+  ws.onclose = () => {
+    if (statusBar) {
+      const reconnectButton = document.createElement("button");
+      reconnectButton.type = "button";
+      reconnectButton.textContent = "reconnect";
+      reconnectButton.onclick = connect;
+      statusBar.replaceChildren("disconnected ", reconnectButton);
+    }
+  };
+
+  ws.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    const items: VehicleItem[] = message.items || [];
+
+    for (const item of items) {
+      vehicles.set(item.id, {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: item.coordinates,
+        },
+        properties: {
           id: item.id,
           heading: item.heading ?? 0,
           datetime: item.datetime,
           destination: item.destination,
           line_name: item.service?.line_name,
-        }),
-      );
-      map.panTo(item.coordinates);
-    }
-  }
+          colour: randomColour(),
+        },
+      });
 
-  const source = map.getSource("vehicles");
-  if (source && source.type === "geojson") {
-    source.setData({
-      type: "FeatureCollection",
-      features: Array.from(vehicles.values()),
-    });
-  }
+      if (openPopup && openPopupId === item.id) {
+        openPopup.setLngLat(item.coordinates).setHTML(
+          popupHTML({
+            id: item.id,
+            heading: item.heading ?? 0,
+            datetime: item.datetime,
+            destination: item.destination,
+            line_name: item.service?.line_name,
+          }),
+        );
+        map.panTo(item.coordinates);
+      }
+    }
+
+    const source = map.getSource("vehicles");
+    if (source && source.type === "geojson") {
+      source.setData({
+        type: "FeatureCollection",
+        features: Array.from(vehicles.values()),
+      });
+    }
+  };
 };
+
+connect();

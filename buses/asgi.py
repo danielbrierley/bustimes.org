@@ -16,6 +16,7 @@ application = ProtocolTypeRouter(
         "websocket": URLRouter(
             [
                 path("firehose", VehicleLocationConsumer.as_asgi()),
+                path("firehose/<int:vehicle_id>", VehicleLocationConsumer.as_asgi()),
             ]
         ),
     }
