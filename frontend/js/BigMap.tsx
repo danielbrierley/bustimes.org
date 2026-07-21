@@ -432,18 +432,11 @@ function JourneySidebar(props: {
   let service: ReactElement | undefined;
   if (journey.service) {
     service = (
-      <>
-        <li>
-          <a href={`/services/${journey.service.slug}?date=${journey.date}`}>
-            {journey.route_name}
-          </a>
-        </li>
-        {journey.trip_id ? (
-          <li>
-            <Link to={`/trips/${journey.trip_id}`}>Map</Link>
-          </li>
-        ) : null}
-      </>
+      <li>
+        <a href={`/services/${journey.service.slug}?date=${journey.date}`}>
+          {journey.route_name}
+        </a>
+      </li>
     );
   } else if (_operator && journey.route_name) {
     service = (
@@ -730,7 +723,11 @@ export default function BigMap(
           break;
         case MapMode.Journey:
           if (journey?.live && journey.vehicle?.id) {
-            url = `?id=${journey.vehicle.id}`;
+            if (journey.service?.id && journey.trip_id) {
+              url = `?service=${journey.service.id}&trip=${journey.trip_id}`;
+            } else {
+              url = `?id=${journey.vehicle.id}`;
+            }
           }
           break;
       }
@@ -839,7 +836,12 @@ export default function BigMap(
         fetchJson(`api/vehiclejourneys/${props.journeyId}/details/`).then(
           (journey: VehicleJourney) => {
             setJourney(journey);
-            const item = journey.live?.length ? journey.live[0] : null;
+            const item = journey.vehicle?.id
+              ? (journey.live?.find((v) => v.id === journey.vehicle?.id) ??
+                null)
+              : journey.live?.length
+                ? journey.live[0]
+                : null;
             // sort of duplicating `handleItems`
             vehiclesHighWaterMark.current = null;
             setVehicles(journey.live);

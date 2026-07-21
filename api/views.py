@@ -248,8 +248,8 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
 
         trip = Trip(start=start, end=end, operator=instance.vehicle.operator)
         trip.stops = [
-            StopTime(stop=origin, departure=start),
-            StopTime(stop=dest, arrival=end),
+            StopTime(stop=origin, departure=start, timing_point=True),
+            StopTime(stop=dest, arrival=end, timing_point=True),
         ]
         return trip
 
@@ -331,12 +331,17 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
             extra_data["trip"] = trip_serializer.data
 
         if locations and current_trip:
-            extra_data["live"] = get_vehicle_locations(
-                vehicle_ids=[instance.vehicle_id],
-                trip_id=instance.trip_id,
-                stop_times=(instance.trip.stops if instance.trip else None),
-                tzinfo=tzinfo,
-            )
+            if instance.service_id:
+                params = {
+                    "service_ids": [instance.service_id],
+                    "trip_id": instance.trip_id,
+                }
+            else:
+                params = {"vehicle_ids": [instance.vehicle_id]}
+            if instance.trip:
+                params["trip_id"] = instance.trip_id
+                params["stop_times"] = instance.trip.stops
+            extra_data["live"] = get_vehicle_locations(**params, tzinfo=tzinfo)
 
         if not instance.trip and instance.vehicle.operator:
             extra_data["operator"] = {
