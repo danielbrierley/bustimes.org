@@ -136,9 +136,13 @@ type VehicleProps = {
 };
 
 const popupHTML = (props: VehicleProps) => {
-  const when = props.datetime
-    ? new Date(props.datetime).toLocaleTimeString()
-    : "";
+  let when = "";
+  if (props.datetime) {
+    const seconds = Math.round(
+      (Date.now() - new Date(props.datetime).getTime()) / 1000,
+    );
+    when = `${new Date(props.datetime).toLocaleTimeString()} (${seconds}s ago)`;
+  }
   return [
     props.line_name &&
       `<strong>${props.line_name}</strong>${props.destination ? ` to ${props.destination}` : ""}`,
@@ -149,11 +153,24 @@ const popupHTML = (props: VehicleProps) => {
     .join("<br>");
 };
 
-const vehicleId = window.location.hash.slice(1);
-const wsPath = vehicleId ? `/firehose/${vehicleId}` : "/firehose";
+const wsPath = () => {
+  const vehicleId = window.location.hash.slice(1);
+  return vehicleId ? `/firehose/${vehicleId}` : "/firehose";
+};
+
+let currentWs: WebSocket | null = null;
 
 const connect = () => {
-  const ws = new WebSocket(`${wsProtocol}://${window.location.host}${wsPath}`);
+  const ws = new WebSocket(
+    `${wsProtocol}://${window.location.host}${wsPath()}`,
+  );
+  currentWs = ws;
+
+  vehicles.clear();
+  const source = map.getSource("vehicles");
+  if (source && source.type === "geojson") {
+    source.setData({ type: "FeatureCollection", features: [] });
+  }
 
   ws.onopen = () => {
     if (statusBar) {
@@ -162,6 +179,7 @@ const connect = () => {
   };
 
   ws.onclose = () => {
+    if (ws !== currentWs) return; // superseded by a newer connection
     if (statusBar) {
       const reconnectButton = document.createElement("button");
       reconnectButton.type = "button";
@@ -215,5 +233,11 @@ const connect = () => {
     }
   };
 };
+
+window.addEventListener("hashchange", () => {
+  openPopup?.remove();
+  currentWs?.close();
+  connect();
+});
 
 connect();
