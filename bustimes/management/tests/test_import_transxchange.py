@@ -1601,9 +1601,10 @@ class ImportTransXChangeTest(TestCase):
                 ],
             )
 
-        self.assertEqual(
-            cm.output[-1][-68:],
-            ":0500FWISM032 is 0.24674205822477827 from POINT (-0.260562 52.59902)",
+        self.assertTrue(
+            cm.output[-1].endswith(
+                "0500FWISM032 52.616189,-0.014418 is 16730m from 52.59902,-0.260562"
+            )
         )
         self.assertEqual(3, Service.objects.filter(current=True).count())  # A, B, C
         self.assertEqual(6, Route.objects.count())

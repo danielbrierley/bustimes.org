@@ -14,6 +14,7 @@ import re
 import zipfile
 from functools import cache
 
+from haversine import Unit, haversine
 from tqdm import tqdm
 
 from django.core.management.base import BaseCommand, CommandError
@@ -247,8 +248,14 @@ def route_link_is_dodgy(point: Point, stop: StopPoint, context: str) -> bool:
             stop.latlong.transform(4326)
         distance = stop.latlong.distance(point)
         if distance > 0.02:
-            # stop location roughly more than 1 km start/end of RouteLink
-            logger.warning(f"{context}: {stop.atco_code} is {distance} from {point}")
+            # stop location roughly more than 1 km from start/end of RouteLink
+            metres = haversine(
+                (stop.latlong.y, stop.latlong.x), (point.y, point.x), unit=Unit.METERS
+            )
+            logger.warning(
+                f"{context}: {stop.atco_code} {stop.latlong.y},{stop.latlong.x} "
+                f"is {metres:.0f}m from {point.y},{point.x}"
+            )
             return True
     return False
 
