@@ -91,14 +91,16 @@ map.on("load", () => {
 
     const id = Number((feature.properties as { id: number | string }).id);
     const coords = feature.geometry.coordinates as [number, number];
+    openPopupProps = feature.properties as VehicleProps;
     openPopup = new maplibregl.Popup({ offset: [0, -6] })
       .setLngLat(coords)
-      .setHTML(popupHTML(feature.properties as VehicleProps))
+      .setHTML(popupHTML(openPopupProps))
       .addTo(map);
     openPopupId = id;
     openPopup.on("close", () => {
       openPopup = null;
       openPopupId = null;
+      openPopupProps = null;
     });
     map.panTo(coords);
   });
@@ -112,6 +114,7 @@ const vehicles = new Map(); // Track all vehicles by id
 
 let openPopup: maplibregl.Popup | null = null;
 let openPopupId: number | null = null;
+let openPopupProps: VehicleProps | null = null;
 
 const randomColour = () =>
   `#${Math.floor(Math.random() * 0xffffff)
@@ -152,6 +155,12 @@ const popupHTML = (props: VehicleProps) => {
     .filter(Boolean)
     .join("<br>");
 };
+
+setInterval(() => {
+  if (openPopup && openPopupProps) {
+    openPopup.setHTML(popupHTML(openPopupProps));
+  }
+}, 1000);
 
 const wsPath = () => {
   const vehicleId = window.location.hash.slice(1);
@@ -211,15 +220,16 @@ const connect = () => {
       });
 
       if (openPopup && openPopupId === item.id) {
-        openPopup.setLngLat(item.coordinates).setHTML(
-          popupHTML({
-            id: item.id,
-            heading: item.heading ?? 0,
-            datetime: item.datetime,
-            destination: item.destination,
-            line_name: item.service?.line_name,
-          }),
-        );
+        openPopupProps = {
+          id: item.id,
+          heading: item.heading ?? 0,
+          datetime: item.datetime,
+          destination: item.destination,
+          line_name: item.service?.line_name,
+        };
+        openPopup
+          .setLngLat(item.coordinates)
+          .setHTML(popupHTML(openPopupProps));
         map.panTo(item.coordinates);
       }
     }
