@@ -1511,6 +1511,13 @@ nav {
     }
 }
 
+.sticky {
+    position: sticky;
+    top: 0;
+    background: var(--background-color);
+    box-shadow: var(--border-color) 0 1px;
+}
+
 figure {
     margin: 1em 0;
     position: relative;

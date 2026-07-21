@@ -91,7 +91,7 @@
 <summary>{{ key }}</summary>
 
 <table>
-    <thead>
+    <thead class="sticky">
         <tr>
             <th scope="col">Fetched</th>
             <th scope="col">Timestamp</th>
@@ -106,7 +106,7 @@
             <tr>
                 <td>{{ item.fetched_at|date:'H:i:s' }}</td>
                 <td>{{ item.timestamp|date:'H:i:s' }}</td>
-                <td>{{ item.age }}</td>
+                <td>{{ item.age.total_seconds }}</td>
                 <td>{{ item.total_items }}</td>
                 <td>{{ item.changed_items }}</td>
                 <td>{{ item.time_taken }}</td>
@@ -121,7 +121,7 @@
     <summary>{{ name }}</summary>
 
     <table>
-        <thead>
+        <thead class="sticky">
             <tr>
                 <th scope="col">Fetched</th>
                 <th scope="col">Items</th>
