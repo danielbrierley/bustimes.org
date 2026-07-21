@@ -163,8 +163,8 @@ class BusOpenDataVehicleLocationsTest(TestCase):
             """
             <tr>
                 <td>00:00:00</td>
-                <td>15:14:46</td>
-                <td>-7312486.261274</td>
+                <td>11:50:58</td>
+                <td>-7300258.0</td>
                 <td>50</td>
                 <td>50</td>
                 <td>0.0</td>
@@ -174,8 +174,8 @@ class BusOpenDataVehicleLocationsTest(TestCase):
             + """
             <tr>
                 <td>00:00:00</td>
-                <td>15:14:46</td>
-                <td>-7312486.261274</td>
+                <td>11:50:58</td>
+                <td>-7300258.0</td>
                 <td>50</td>
                 <td>0</td>
                 <td>0.0</td>

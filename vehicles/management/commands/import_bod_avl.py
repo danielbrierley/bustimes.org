@@ -615,6 +615,7 @@ class Command(ImportLiveVehiclesCommand):
 
     def get_items(self):
         response = self.session.get(self.source.url, timeout=61)
+        fetched_at = timezone.now()
 
         if not response.ok:
             print(response.headers, response.content, response)
@@ -643,9 +644,26 @@ class Command(ImportLiveVehiclesCommand):
 
         previous_time = self.source.datetime
 
-        self.source.datetime = datetime.fromisoformat(
-            service_delivery.findtext(f"{{{ns}}}ResponseTimestamp")
+        response_timestamp = service_delivery.findtext(f"{{{ns}}}ResponseTimestamp")
+        self.source.datetime = (
+            datetime.fromisoformat(response_timestamp) if response_timestamp else None
         )
+
+        items = None
+        if not self.source.datetime or self.source.datetime > fetched_at:
+            # ResponseTimestamp is missing, or implausibly fresh (e.g. a clock
+            # issue upstream) - fall back to the latest RecordedAtTime among
+            # the vehicle activities, since that's what actually drives the
+            # freshness/polling logic in update() below
+            items = [
+                _elem_to_dict(a)
+                for a in service_delivery.find(
+                    f"{{{ns}}}VehicleMonitoringDelivery"
+                ).findall(f"{{{ns}}}VehicleActivity")
+            ]
+            recorded_times = [self.get_datetime(item) for item in items]
+            if recorded_times:
+                self.source.datetime = max(recorded_times)
 
         if (
             self.source.datetime
@@ -654,8 +672,13 @@ class Command(ImportLiveVehiclesCommand):
         ):
             return  # don't return old data
 
-        delivery = service_delivery.find(f"{{{ns}}}VehicleMonitoringDelivery")
-        return [_elem_to_dict(a) for a in delivery.findall(f"{{{ns}}}VehicleActivity")]
+        if items is None:
+            delivery = service_delivery.find(f"{{{ns}}}VehicleMonitoringDelivery")
+            items = [
+                _elem_to_dict(a) for a in delivery.findall(f"{{{ns}}}VehicleActivity")
+            ]
+
+        return items
 
     @staticmethod
     def get_vehicle_identity(item):
