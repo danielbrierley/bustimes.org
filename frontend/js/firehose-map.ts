@@ -91,19 +91,13 @@ map.on("load", () => {
 
     const id = Number((feature.properties as { id: number | string }).id);
     const coords = feature.geometry.coordinates as [number, number];
-    openPopupProps = feature.properties as VehicleProps;
-    openPopup = new maplibregl.Popup({ offset: [0, -6] })
-      .setLngLat(coords)
-      .setHTML(popupHTML(openPopupProps))
-      .addTo(map);
-    openPopupId = id;
-    openPopup.on("close", () => {
-      openPopup = null;
-      openPopupId = null;
-      openPopupProps = null;
-    });
+    openVehiclePopup(id, coords, feature.properties as VehicleProps);
     map.panTo(coords);
   });
+
+  // messages may have arrived (and populated `vehicles`) before the source
+  // existed, so render whatever's already been received
+  syncVehiclesSource();
 });
 
 const wsProtocol = window.location.protocol === "http:" ? "ws" : "wss";
@@ -112,9 +106,42 @@ const statusBar = document.getElementById("skew");
 
 const vehicles = new Map(); // Track all vehicles by id
 
+const syncVehiclesSource = () => {
+  const source = map.getSource("vehicles");
+  if (source && source.type === "geojson") {
+    source.setData({
+      type: "FeatureCollection",
+      features: Array.from(vehicles.values()),
+    });
+  }
+};
+
 let openPopup: maplibregl.Popup | null = null;
 let openPopupId: number | null = null;
 let openPopupProps: VehicleProps | null = null;
+
+const openVehiclePopup = (
+  id: number,
+  coords: [number, number],
+  props: VehicleProps,
+) => {
+  const tracked = id === singleVehicleId;
+  openPopupProps = props;
+  openPopup = new maplibregl.Popup({
+    offset: [0, -6],
+    closeOnClick: !tracked,
+    closeButton: !tracked,
+  })
+    .setLngLat(coords)
+    .setHTML(popupHTML(openPopupProps))
+    .addTo(map);
+  openPopupId = id;
+  openPopup.on("close", () => {
+    openPopup = null;
+    openPopupId = null;
+    openPopupProps = null;
+  });
+};
 
 const randomColour = () =>
   `#${Math.floor(Math.random() * 0xffffff)
@@ -162,28 +189,39 @@ setInterval(() => {
   }
 }, 1000);
 
+const getSingleVehicleId = (): number | null => {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return null;
+  const id = Number(hash);
+  return Number.isFinite(id) ? id : null;
+};
+
 const wsPath = () => {
-  const vehicleId = window.location.hash.slice(1);
-  return vehicleId ? `/firehose/${vehicleId}` : "/firehose";
+  const id = getSingleVehicleId();
+  return id !== null ? `/firehose/${id}` : "/firehose";
 };
 
 let currentWs: WebSocket | null = null;
+let singleVehicleId: number | null = null;
+let hasCenteredOnVehicle = false;
 
 const connect = () => {
+  singleVehicleId = getSingleVehicleId();
+  hasCenteredOnVehicle = false;
+
   const ws = new WebSocket(
     `${wsProtocol}://${window.location.host}${wsPath()}`,
   );
   currentWs = ws;
 
-  vehicles.clear();
-  const source = map.getSource("vehicles");
-  if (source && source.type === "geojson") {
-    source.setData({ type: "FeatureCollection", features: [] });
-  }
-
   ws.onopen = () => {
+    const source = map.getSource("vehicles");
+    if (source && source.type === "geojson") {
+      source.setData({ type: "FeatureCollection", features: [] });
+    }
+
     if (statusBar) {
-      statusBar.replaceChildren("connected");
+      statusBar.prepend("connected\n");
     }
   };
 
@@ -191,11 +229,9 @@ const connect = () => {
     if (ws !== currentWs) return; // superseded by a newer connection
     if (statusBar) {
       const reconnectButton = document.createElement("button");
-      reconnectButton.type = "button";
-      reconnectButton.textContent = "reconnect";
-      reconnectButton.onclick = connect;
-      statusBar.replaceChildren("disconnected ", reconnectButton);
+      statusBar.prepend("disconnected\n");
     }
+    setTimeout(connect, 1000);
   };
 
   ws.onmessage = (event) => {
@@ -219,17 +255,35 @@ const connect = () => {
         },
       });
 
-      if (openPopup && openPopupId === item.id) {
-        openPopupProps = {
+      const tracked = item.id === singleVehicleId;
+
+      if (tracked || (openPopup && openPopupId === item.id)) {
+        const props: VehicleProps = {
           id: item.id,
           heading: item.heading ?? 0,
           datetime: item.datetime,
           destination: item.destination,
           line_name: item.service?.line_name,
         };
-        openPopup
-          .setLngLat(item.coordinates)
-          .setHTML(popupHTML(openPopupProps));
+        if (openPopupId === item.id) {
+          openPopupProps = props;
+          openPopup?.setLngLat(item.coordinates).setHTML(popupHTML(props));
+        } else {
+          openVehiclePopup(item.id, item.coordinates, props);
+        }
+      }
+
+      if (tracked) {
+        if (hasCenteredOnVehicle) {
+          map.panTo(item.coordinates);
+        } else {
+          map.flyTo({
+            center: item.coordinates,
+            zoom: Math.max(map.getZoom(), 15),
+          });
+          hasCenteredOnVehicle = true;
+        }
+      } else if (openPopup && openPopupId === item.id) {
         map.panTo(item.coordinates);
       }
     }
