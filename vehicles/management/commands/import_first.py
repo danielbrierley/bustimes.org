@@ -95,11 +95,7 @@ class Command(ImportLiveVehiclesCommand):
             if not journey.date:
                 journey.date = timezone.localdate(departure_time)
             journey.save()
-            if (
-                journey.trip
-                and journey.trip.garage_id
-                and journey.trip.garage_id != vehicle.garage_id
-            ):
+            if journey.trip and journey.trip.garage_id != vehicle.garage_id:
                 vehicle.garage_id = journey.trip.garage_id
                 vehicle.save(update_fields=["garage"])
 
