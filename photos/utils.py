@@ -22,19 +22,23 @@ def add_flickr_photo(url, vehicle, request):
         "photo_id": photo_id,
         "nojsoncallback": 1,
     }
-    info = session.get(
+    response = session.get(
         "https://api.flickr.com/services/rest",
         params={"method": "flickr.photos.getInfo"},
-    ).json()
+    )
+    response.raise_for_status()
+    info = response.json()
     photo.url = info["photo"]["urls"]["url"][0]["_content"]
     photo.credit = (
         info["photo"]["owner"]["realname"] or info["photo"]["owner"]["username"]
     )
     photo.caption = info["photo"]["title"]["_content"]
-    sizes = session.get(
+    response = session.get(
         "https://api.flickr.com/services/rest",
         params={"method": "flickr.photos.getSizes"},
-    ).json()
+    )
+    response.raise_for_status()
+    sizes = response.json()
     url = sizes["sizes"]["size"][-1]["source"]
     original = session.get(url)
     photo.image.save(get_sha1(original.content) + ".jpg", ContentFile(original.content))
