@@ -805,7 +805,7 @@ class VehicleLocation:
             "journey_id": journey.id,
             "coordinates": self.latlong.coords,
             "heading": self.heading,
-            "datetime": timezone.localtime(self.datetime, timezone=tz),
+            "datetime": timezone.localtime(self.datetime, timezone=tz).isoformat(),
             "destination": journey.destination,
             "block": self.block,
         }
@@ -816,7 +816,7 @@ class VehicleLocation:
         if self.tfl_code:
             json["tfl_code"] = self.tfl_code
         if journey.trip_id:
-            json["date"] = journey.date
+            json["date"] = journey.date.isoformat()
             json["trip_id"] = journey.trip_id
         if journey.service_id:
             json["service_id"] = journey.service_id

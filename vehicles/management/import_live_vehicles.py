@@ -9,7 +9,6 @@ import sentry_sdk
 from django.contrib.gis.geos import Point
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError
 from django.db.models import Exists, OuterRef, Q
 from django.db.models.functions import Now
@@ -351,9 +350,12 @@ class ImportLiveVehiclesCommand(BaseCommand):
                 location.journey.trip = None
 
             redis_json = location.get_redis_json(tz=self.tzinfo)
-            redis_json = json.dumps(redis_json, cls=DjangoJSONEncoder)
-            pipeline.set(f"vehicle{vehicle.id}", redis_json, ex=900)
-            # can't use 'mset' cos it doesn't let us specify an expiry (900 secs = 15 min)
+            pipeline.set(
+                f"vehicle{vehicle.id}",
+                json.dumps(redis_json),
+                ex=900,  # 900 secs = 15 min
+            )
+            # can't use 'mset' cos it doesn't let us specify an expiry
 
         if geoadd:
             pipeline.geoadd("vehicle_location_locations", geoadd)

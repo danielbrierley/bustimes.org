@@ -529,7 +529,7 @@ class BusOpenDataVehicleLocationsTest(TestCase):
                             "name": "104 - BB62 BUS",
                         },
                         "heading": 142,
-                        "datetime": "2020-11-28T15:07:06Z",
+                        "datetime": "2020-11-28T15:07:06+00:00",
                         "destination": "Southwold",
                         "service": {"line_name": "146"},
                     }
@@ -551,7 +551,7 @@ class BusOpenDataVehicleLocationsTest(TestCase):
                             "name": "104 - BB62 BUS",
                         },
                         "heading": 142,
-                        "datetime": "2020-11-28T15:07:06Z",
+                        "datetime": "2020-11-28T15:07:06+00:00",
                         "destination": "Southwold",
                         "service": {"line_name": "146"},
                     }
@@ -680,7 +680,7 @@ class BusOpenDataVehicleLocationsTest(TestCase):
                         "name": "626",
                     },
                     "heading": 189.0,
-                    "datetime": "2021-03-05T14:26:43Z",
+                    "datetime": "2021-03-05T14:26:43+00:00",
                     "destination": "",
                     "service": {"line_name": "42"},
                     "seats": "27 free",
