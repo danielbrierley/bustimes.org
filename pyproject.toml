@@ -51,6 +51,7 @@ dependencies = [
     "transxchange-parser",
     "channels[daphne]>=4.3.2",
     "channels-redis>=4.3.0",
+    "uvicorn-worker>=0.4.0",
 ]
 
 [dependency-groups]
