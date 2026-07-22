@@ -171,7 +171,7 @@ const popupHTML = (props: VehicleProps) => {
     const seconds = Math.round(
       (Date.now() - new Date(props.datetime).getTime()) / 1000,
     );
-    when = `${new Date(props.datetime).toLocaleTimeString()} (${seconds}s ago)`;
+    when = `<time>${new Date(props.datetime).toLocaleTimeString()} (${seconds}s ago)</time>`;
   }
   return [
     props.line_name &&
