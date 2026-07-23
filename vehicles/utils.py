@@ -11,6 +11,14 @@ try:
 except InvalidCacheBackendError:
     redis_client = None
 
+# channel that import_live_vehicles sends batches of updated vehicle locations to,
+# for the distribute_vehicle_locations worker to fan out to websocket groups
+VEHICLE_POSITIONS_CHANNEL = "vehicle_positions"
+
+# Redis sorted set of vehicle_id -> number of websocket clients currently watching it,
+# updated by VehicleLocationConsumer.connect/disconnect
+VEHICLE_WATCHERS_KEY = "vehicle_watchers"
+
 
 def filename_from_content_disposition(response) -> str:
     # really not fully RFC 6266 compliant
