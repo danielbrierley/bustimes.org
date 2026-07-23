@@ -165,26 +165,26 @@ class Command(ImportLiveVehiclesCommand):
         services = Service.objects.filter(operator=operator, current=True)
         return services.aggregate(Extent("geometry"))["geometry__extent"]
 
-    async def sock_it(self, extent):
+    async def sock_it(self, extent, noc, route_name):
         socket_info = requests.get(self.source.url, headers=self.source.settings).json()
 
         min_lon, min_lat, max_lon, max_lat = extent
 
-        message = json.dumps(
-            {
-                "jsonrpc": "2.0",
-                "id": str(uuid4()),
-                "method": "configuration",
-                "params": {
-                    # "operator": "ACAH",
-                    # "stop_of_interest": "2900N12216",
-                    "min_lon": min_lon,
-                    "max_lon": max_lon,
-                    "min_lat": min_lat,
-                    "max_lat": max_lat,
-                },
-            }
-        )
+        message = {
+            "jsonrpc": "2.0",
+            "id": str(uuid4()),
+            "method": "configuration",
+            "params": {
+                "min_lon": min_lon,
+                "max_lon": max_lon,
+                "min_lat": min_lat,
+                "max_lat": max_lat,
+            },
+        }
+        if route_name:
+            message["params"]["service"] = route_name
+            message["params"]["operator"] = noc
+        message = json.dumps(message)
 
         async with connect(
             socket_info["data"]["url"],
@@ -212,12 +212,13 @@ class Command(ImportLiveVehiclesCommand):
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument("operator_name", type=str)
+        parser.add_argument("route_name", type=str, nargs="?")
 
-    def handle(self, operator_name, *args, **options):
+    def handle(self, operator_name, route_name=None, *args, **options):
         self.source = DataSource.objects.get(name="First")
 
         self.cache = {}
         operator = Operator.objects.get(Q(name=operator_name) | Q(noc=operator_name))
 
         extent = self.get_extent(operator)
-        asyncio.run(self.sock_it(extent))
+        asyncio.run(self.sock_it(extent, operator_name, route_name))
