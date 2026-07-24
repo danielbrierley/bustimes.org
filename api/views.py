@@ -341,7 +341,10 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
             if instance.trip:
                 params["trip_id"] = instance.trip_id
                 params["stop_times"] = instance.trip.stops
-            extra_data["live"] = get_vehicle_locations(**params, tzinfo=tzinfo)
+            live = get_vehicle_locations(**params, tzinfo=tzinfo)
+            # check that this journey is actually tracking (not an old journey)
+            if live and any(instance.id == item["journey_id"] for item in live):
+                extra_data["live"] = live
 
         if not instance.trip and instance.vehicle.operator:
             extra_data["operator"] = {
