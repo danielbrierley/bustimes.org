@@ -10,8 +10,6 @@
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^30.0.0",
-    "@types/leaflet": "^1.9.6",
-    "@types/loadjs": "^4.0.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@types/react-test-renderer": "^19.1.0",
@@ -29,9 +27,6 @@
     "@types/node": "^25.0.8",
     "htmx.org": "^2.0.4",
     "jest-environment-jsdom": "^30.2.0",
-    "leaflet": "^1.9.4",
-    "leaflet.locatecontrol": "^0.86.0",
-    "loadjs": "^4.2.0",
     "lodash": "^4.17.21",
     "maplibre-gl": "^5.24.0",
     "process": "^0.11.10",
@@ -56,16 +51,6 @@
         "browsers": "Chrome 90"
       }
     },
-    "bigmap": {
-      "source": [
-        "frontend/js/bigmap.js",
-        "frontend/js/bigmap-classic.js"
-      ],
-      "distDir": "busstops/static/dist",
-      "engines": {
-        "browsers": "ie >= 11"
-      }
-    }
   },
   "scripts": {
     "watch": "parcel watch",

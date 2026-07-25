@@ -1004,10 +1004,6 @@ https://www.flickr.com/photos/goodwinjoshua/51046126023/ blah""",
         response = self.client.get("/map", headers={"CF-IPCountry": "IE"})
         self.assertContains(response, "latitude: 53.45,")
 
-        response = self.client.get("/map/old")
-        self.assertNotContains(response, "/bigmap.")
-        self.assertContains(response, "/bigmap-classic.")
-
     def test_vehicles(self):
         with self.assertNumQueries(3):
             self.client.get("/vehicles")
