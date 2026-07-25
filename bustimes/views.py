@@ -53,7 +53,7 @@ from vehicles.rtpi import add_progress_and_delay
 
 from .download_utils import download
 from .models import Route, StopTime, Trip, RouteLink
-from .utils import get_other_trips_in_block
+from .utils import get_other_trips_in_block, get_calendars
 
 
 class ServiceDebugView(DetailView):
@@ -825,3 +825,49 @@ def trip_updates(request):
             "trip_updates": trip_updates,
         },
     )
+
+
+@require_GET
+def operator_blocks(request, slug):
+    """fleet list"""
+
+    operator = get_object_or_404(Operator, slug=slug)
+
+    trips = operator.trip_set.filter(route__service__current=True).select_related(
+        "route"
+    )
+
+    form = DateForm(request.GET)
+    if form.is_valid():
+        date = form.cleaned_data["date"]
+    else:
+        date = timezone.localdate()
+
+    calendars = get_calendars(date)
+    trips = trips.filter(calendar__in=calendars).order_by("block", "start")
+
+    if trips:
+        start = min(trip.start.total_seconds() for trip in trips)
+        end = min(trip.end.total_seconds() for trip in trips)
+        length_of_day = end - start
+
+    blocks = {}
+
+    for trip in trips:
+        trip.left = int((trip.start.total_seconds() - start) / length_of_day * 200)
+        trip.width = int((trip.end - trip.start).total_seconds() / length_of_day * 200)
+
+        if trip.block:
+            if trip.block in blocks:
+                blocks[trip.block].append(trip)
+            else:
+                blocks[trip.block] = [trip]
+
+    context = {
+        "object": operator,
+        "breadcrumb": [operator],
+        "date": date,
+        "blocks": blocks,
+    }
+
+    return render(request, "operator_blocks.html", context)
