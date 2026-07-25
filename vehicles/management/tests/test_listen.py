@@ -21,17 +21,26 @@ class ListenTest(TestCase):
             ) as mock_post,
             mock.patch("vehicles.management.commands.listen.time.sleep") as mock_sleep,
         ):
-            mock_cursor.return_value.__enter__.return_value.connection.notifies.return_value = [
-                mock.Mock(payload="sndr-p420-kak"),
-            ]
+            for payload in ("sndr-p420-kak", "loth-199", "rtcsnv-16615"):
+                mock_cursor.return_value.__enter__.return_value.connection.notifies.return_value = [
+                    mock.Mock(payload=payload),
+                ]
+                call_command("listen")
 
-            call_command("listen")
+        mock_post.assert_any_call(
+            "http://example.com",
+            json={
+                "username": "bot",
+                "content": "[sndr-p420-kak](https://bustimes.org/vehicles/sndr-p420-kak) <@813528710404898817>",
+            },
+            timeout=10,
+        )
 
         mock_post.assert_called_with(
             "http://example.com",
             json={
                 "username": "bot",
-                "content": "[sndr-p420-kak](https://bustimes.org/vehicles/sndr-p420-kak) <@813528710404898817>",
+                "content": "[loth-199](https://bustimes.org/vehicles/loth-199)",
             },
             timeout=10,
         )
