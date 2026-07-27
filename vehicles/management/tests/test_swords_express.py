@@ -38,6 +38,6 @@ class SignalRTest(TestCase):
             ):
                 call_command("swords_express")
 
-            vehicles = Vehicle.objects.all()
+            vehicles = Vehicle.objects.order_by("id")
 
             self.assertEqual(vehicles[0].reg, "05-D-7790")

@@ -26,6 +26,8 @@ class EdinburghImportTest(TestCase):
         )
         cls.service = Service.objects.create(line_name="N14", current=True)
         cls.service.operator.add(cls.operator_1)
+        service_2 = Service.objects.create(line_name="100", current=True)
+        service_2.operator.add(cls.operator_1)
         cls.source = source
         Vehicle.objects.create(operator_id="EDTR", source=source, code="1120")
 
@@ -45,7 +47,7 @@ class EdinburghImportTest(TestCase):
             with mock.patch(
                 "vehicles.management.import_live_vehicles.redis_client", redis_client
             ):
-                with self.assertNumQueries(170):
+                with self.assertNumQueries(183):
                     command.update()
 
                 cassette.rewind()
@@ -72,4 +74,5 @@ class EdinburghImportTest(TestCase):
         self.assertContains(response, '/map">Map</a>')
         self.assertContains(response, '/vehicles">Vehicles</a>')
 
-        self.assertContains(response, "background: #0C1436;")
+        self.assertContains(response, "background: #0C1436;")  # N14
+        self.assertContains(response, "background: #002C4D;")  # 100
