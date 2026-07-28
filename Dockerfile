@@ -31,4 +31,4 @@ ENV PORT=8000 STATIC_ROOT=/staticfiles
 RUN ./manage.py collectstatic --noinput
 
 EXPOSE 8000
-CMD ["gunicorn", "-k", "uvicorn_worker.UvicornWorker", "buses.asgi:application"]
+CMD ["granian", "--host", "0.0.0.0", "--interface", "asgi", "buses.asgi:application"]
