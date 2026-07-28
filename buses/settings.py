@@ -57,7 +57,6 @@ INSTALLED_APPS = [
     "django_filters",
     "simple_history",
     "huey.contrib.djhuey",
-    "huey.contrib.djhuey.stats",
     "corsheaders",
     "turnstile",
     "django_http_compression",

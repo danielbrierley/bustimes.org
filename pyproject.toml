@@ -49,7 +49,6 @@ dependencies = [
     "django-imagekit>=6.1.0",
     "django-storages>=1.14.6",
     "transxchange-parser",
-    "peewee>=4.2.6",
 ]
 
 [dependency-groups]
