@@ -16,6 +16,7 @@ def add_flickr_photo(url, vehicle, request):
     photo_id = url.split("/photos/", 1)[1].split("/")[1]
     photo = Photo()
     session = requests.Session()
+    session.headers.update({"User-Agent": "bustimes.org"})
     session.params = {
         "format": "json",
         "api_key": settings.FLICKR_API_KEY,
