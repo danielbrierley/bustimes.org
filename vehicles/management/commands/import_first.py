@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import requests
 from asgiref.sync import sync_to_async
+from django.db import connections
 from django.db.models import Q
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Point
@@ -160,6 +161,10 @@ class Command(ImportLiveVehiclesCommand):
             self.handle_item(item, vehicles.get(vehicle_codes[i]))
         self.save()
 
+    @sync_to_async
+    def close_connections(self):
+        connections.close_all()
+
     @staticmethod
     def get_extent(operator):
         services = Service.objects.filter(operator=operator, current=True)
@@ -221,4 +226,7 @@ class Command(ImportLiveVehiclesCommand):
         operator = Operator.objects.get(Q(name=operator_name) | Q(noc=operator_name))
 
         extent = self.get_extent(operator)
-        asyncio.run(self.sock_it(extent, operator_name, route_name))
+        try:
+            asyncio.run(self.sock_it(extent, operator_name, route_name))
+        finally:
+            asyncio.run(self.close_connections())
