@@ -114,9 +114,7 @@ ROOT_URLCONF = "buses.urls"
 ASGI_APPLICATION = "buses.asgi.application"
 
 
-DATABASES = {
-    "default": dj_database_url.config(conn_max_age=None, conn_health_checks=True)
-}
+DATABASES = {"default": dj_database_url.config()}
 
 DATABASES["default"]["OPTIONS"] = {
     "application_name": os.environ.get("APPLICATION_NAME") or " ".join(sys.argv)[-63:],
@@ -349,7 +347,7 @@ NTA_API_KEY = os.environ.get("NTA_API_KEY")  # Ireland
 ALLOW_VEHICLE_NOTES_OPERATORS = (
     "NATX",  # National Express
     "SCLK",  # Scottish Citylink
-    "FLIX",  #Flixbus
+    "FLIX",  # Flixbus
     "ie-526",  # Irish Citylink
     "ie-1178",  # Dublin Express
 )
