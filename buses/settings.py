@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "django_filters",
     "simple_history",
     "huey.contrib.djhuey",
+    "huey.contrib.djhuey.stats",
     "corsheaders",
     "turnstile",
     "django_http_compression",
@@ -338,7 +339,7 @@ NTA_API_KEY = os.environ.get("NTA_API_KEY")  # Ireland
 ALLOW_VEHICLE_NOTES_OPERATORS = (
     "NATX",  # National Express
     "SCLK",  # Scottish Citylink
-    "FLIX",  #Flixbus
+    "FLIX",  # Flixbus
     "ie-526",  # Irish Citylink
     "ie-1178",  # Dublin Express
 )

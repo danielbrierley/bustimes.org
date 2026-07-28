@@ -155,6 +155,7 @@ dependencies = [
     { name = "lightningcss-cli" },
     { name = "lxml" },
     { name = "numpy" },
+    { name = "peewee" },
     { name = "polyline" },
     { name = "psycopg", extra = ["c"] },
     { name = "pygments" },
@@ -225,6 +226,7 @@ requires-dist = [
     { name = "lightningcss-cli", specifier = ">=1.29.2,<2" },
     { name = "lxml", specifier = ">=6.0.0,<7" },
     { name = "numpy", specifier = "~=2.5.0" },
+    { name = "peewee", specifier = ">=4.2.6" },
     { name = "polyline", specifier = ">=2.0.4" },
     { name = "psycopg", extras = ["c"], specifier = ">=3.1.8,<4" },
     { name = "pygments", specifier = ">=2.15.1,<3" },
@@ -1118,11 +1120,20 @@ wheels = [
 ]
 
 [[package]]
+name = "peewee"
+version = "4.2.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2b/6d/45b139fba589e185dcee447414c2e0efaebb0a247c06329fdc9bd84ba4aa/peewee-4.2.6.tar.gz", hash = "sha256:f40655c64a62eaa447af228e4b84a5e80d3c812d2de34c7b9c621a3ef0c6555c", size = 779493, upload-time = "2026-07-17T18:11:21.3Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/63/26ec789e68e994d64ed957dd6ee5a08bb78c2f401c40e46fc142669cd8b0/peewee-4.2.6-py3-none-any.whl", hash = "sha256:b54c0f6e09c987465f8268bb2b4c1cba2e1b2788fcc0974c8e2233af1fd5af8f", size = 173774, upload-time = "2026-07-17T18:11:19.787Z" },
+]
+
+[[package]]
 name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess" },
+    { name = "ptyprocess", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
