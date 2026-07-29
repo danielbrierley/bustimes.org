@@ -4,8 +4,8 @@
         {% if not vehicle %}
             <a href="{{ revision.vehicle.get_absolute_url }}">{{ revision.vehicle }}</a> &centerdot;
         {% endif %}
-        <time datetime="{{ revision.created_at|date:'c' }}" title="{{ revision.created_at|date:'d/m/Y H:i' }}">
-        {{ revision.created_at|naturaltime }}
+        <time datetime="{{ revision.created_at.isoformat }}" title="{{ revision.created_at|date:'j M Y H:i' }}">
+            {{ revision.created_at|naturaltime }}
         </time>
         {% if revision.user %}
             &centerdot; <a href="{{ revision.user.get_absolute_url }}">{{ revision.user }}</a>
