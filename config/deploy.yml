@@ -20,6 +20,8 @@ servers:
     env:
       clear:
         GRANIAN_WORKERS: 8
+        GRANIAN_BACKPRESSURE: 32
+        WEB_CONCURRENCY: 8
         EMAIL_HOST: email-smtp.eu-west-1.amazonaws.com
         ALLOWED_HOSTS: bustimes.org
       secret:

@@ -257,6 +257,7 @@ if REDIS_URL and not TEST:
             "socket_keepalive": True,
             "health_check_interval": 30,
             "retry_on_timeout": True,
+            "max_connections": 40,
         },
     }
     if "default" not in CACHES:
