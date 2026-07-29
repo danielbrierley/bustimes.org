@@ -94,12 +94,20 @@
 
 {% load static %}
 
-<div id="journeys" hx-history="false">
+<div id="journeys" data-hx-trigger="false">
 
 {% if date %}
     <script src="{% static 'js/htmx.org/htmx.min.js' %}"></script>
 
-    <form class="timetable-date" autocomplete="off" hx-trigger="change" hx-get="{{ request.path }}" hx-select="#journeys" hx-target="#journeys" hx-indicator="#journeys" hx-swap="outerHTML" hx-push-url="true">
+    <form class="timetable-date" autocomplete="off"
+        data-hx-trigger="change"
+        data-hx-get="{{ request.path }}"
+        data-hx-select="#journeys"
+        data-hx-target="#journeys"
+        data-hx-indicator="#journeys"
+        data-hx-swap="outerHTML"
+        data-hx-trigger="true"
+    >
         {% if dates %}
             <select name="date" aria-label="Date">
                 {% for option in dates %}
