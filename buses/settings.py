@@ -165,7 +165,7 @@ HUEY = {
 if REDIS_URL:
     CHANNEL_LAYERS = {
         "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer",
             "CONFIG": {
                 "hosts": [{"address": REDIS_URL, "socket_timeout": 10}],
             },

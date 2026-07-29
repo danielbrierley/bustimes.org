@@ -1,5 +1,6 @@
 import math
 
+import redis.asyncio
 from django.core.cache import caches
 from django.conf import settings
 from django.core.cache.backends.base import InvalidCacheBackendError
@@ -10,6 +11,13 @@ try:
     redis_client = caches["redis"]._cache.get_client()
 except InvalidCacheBackendError:
     redis_client = None
+
+if redis_client:
+    async_redis_client = redis.asyncio.Redis.from_url(
+        settings.REDIS_URL, max_connections=8
+    )
+else:
+    async_redis_client = None
 
 # channel that import_live_vehicles sends batches of updated vehicle locations to,
 # for the distribute_vehicle_locations worker to fan out to websocket groups

@@ -5,7 +5,11 @@ from channels.layers import get_channel_layer
 from django.core.management.base import BaseCommand
 from redis.exceptions import ConnectionError
 
-from ...utils import VEHICLE_POSITIONS_CHANNEL, VEHICLE_WATCHERS_KEY
+from ...utils import (
+    VEHICLE_POSITIONS_CHANNEL,
+    VEHICLE_WATCHERS_KEY,
+    async_redis_client,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +18,6 @@ class Command(BaseCommand):
     async def run(self):
         channel_layer = get_channel_layer()
         group_send = channel_layer.group_send
-        watchers_connection = channel_layer.connection(
-            channel_layer.consistent_hash(VEHICLE_WATCHERS_KEY)
-        )
 
         while True:
             try:
@@ -28,7 +29,7 @@ class Command(BaseCommand):
                 )
 
                 ids = [str(item["id"]) for item in items]
-                scores = await watchers_connection.zmscore(VEHICLE_WATCHERS_KEY, ids)
+                scores = await async_redis_client.zmscore(VEHICLE_WATCHERS_KEY, ids)
 
                 for item, score in zip(items, scores):
                     if score and score > 0:
