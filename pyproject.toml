@@ -50,7 +50,7 @@ dependencies = [
     "transxchange-parser",
     "channels[daphne]>=4.3.2",
     "channels-redis>=4.3.0",
-    "granian>=2.7.9",
+    "granian[uvloop]>=2.7.9",
 ]
 
 [dependency-groups]

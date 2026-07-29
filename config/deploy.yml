@@ -19,7 +19,7 @@ servers:
       ulimit: nofile=65536:65536
     env:
       clear:
-        WEB_CONCURRENCY: 16
+        GRANIAN_WORKERS: 8
         EMAIL_HOST: email-smtp.eu-west-1.amazonaws.com
         ALLOWED_HOSTS: bustimes.org
       secret:
