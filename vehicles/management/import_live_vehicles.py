@@ -6,6 +6,9 @@ from time import sleep
 
 import requests
 import sentry_sdk
+from asgiref.sync import async_to_sync
+from channels.exceptions import ChannelFull
+from channels.layers import get_channel_layer
 from django.contrib.gis.geos import Point
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
@@ -20,7 +23,7 @@ from busstops.models import DataSource
 from bustimes.models import Route, Trip
 
 from ..models import Vehicle, VehicleJourney, VehicleCode
-from ..utils import calculate_bearing, redis_client
+from ..utils import VEHICLE_POSITIONS_CHANNEL, calculate_bearing, redis_client
 
 logger = logging.getLogger(__name__)
 fifteen_minutes = timedelta(minutes=15)
@@ -311,6 +314,7 @@ class ImportLiveVehiclesCommand(BaseCommand):
 
         geoadd = []
         sadd = {}
+        items = []
 
         for location, vehicle in self.to_save:
             if not location.latlong or (
@@ -350,6 +354,7 @@ class ImportLiveVehiclesCommand(BaseCommand):
                 location.journey.trip = None
 
             redis_json = location.get_redis_json(tz=self.tzinfo)
+            items.append(redis_json)
             pipeline.set(
                 f"vehicle{vehicle.id}",
                 json.dumps(redis_json),
@@ -373,6 +378,21 @@ class ImportLiveVehiclesCommand(BaseCommand):
             pipeline.execute()
         except ConnectionError as e:
             logger.exception(e)
+
+        channel_layer = get_channel_layer()
+        if channel_layer is not None and items:
+            try:
+                async_to_sync(channel_layer.send)(
+                    VEHICLE_POSITIONS_CHANNEL,
+                    {
+                        "type": "move_vehicles",
+                        "items": items,
+                    },
+                )
+            except ChannelFull as e:
+                # distribute_vehicle_locations worker isn't keeping up (or is down) -
+                # drop this batch rather than blocking the importer
+                logger.error(e)
 
         self.to_save = []
 
