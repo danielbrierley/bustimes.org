@@ -722,11 +722,15 @@ export default function BigMap(
           }
           break;
         case MapMode.Journey:
-          if (journey?.live && journey.vehicle?.id) {
+          if (journey?.live) {
             if (journey.service?.id && journey.trip_id) {
               url = `?service=${journey.service.id}&trip=${journey.trip_id}`;
-            } else {
+            } else if (journey.vehicle?.id) {
               url = `?id=${journey.vehicle.id}`;
+            } else {
+              // journey-based tracking with no vehicle (e.g. FlixBus) -
+              // the journey id is used in lieu of a vehicle id
+              url = `?id=${journey.id}`;
             }
           }
           break;
@@ -751,11 +755,14 @@ export default function BigMap(
         }
 
         if (items.length || vehiclesLength.current || first) {
-          if (trip || journey?.vehicle?.id) {
+          if (trip || journey) {
             for (const item of items) {
               if (
                 (trip && trip.id === item.trip_id) ||
-                journey?.vehicle?.id === item.id
+                (journey &&
+                  (journey.vehicle?.id
+                    ? journey.vehicle.id === item.id
+                    : journey.id === item.journey_id))
               ) {
                 if (first) setClickedVehicleMarker(item.id);
                 setTripVehicle(item);
@@ -839,9 +846,9 @@ export default function BigMap(
             const item = journey.vehicle?.id
               ? (journey.live?.find((v) => v.id === journey.vehicle?.id) ??
                 null)
-              : journey.live?.length
-                ? journey.live[0]
-                : null;
+              : // journey-based tracking with no vehicle (e.g. FlixBus)
+                (journey.live?.find((v) => v.journey_id === journey.id) ??
+                null);
             // sort of duplicating `handleItems`
             vehiclesHighWaterMark.current = null;
             setVehicles(journey.live);

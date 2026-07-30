@@ -346,7 +346,7 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
             if live and any(instance.id == item["journey_id"] for item in live):
                 extra_data["live"] = live
 
-        if not instance.trip and instance.vehicle.operator:
+        if not instance.trip and instance.vehicle_id and instance.vehicle.operator:
             extra_data["operator"] = {
                 "noc": instance.vehicle.operator.noc,
                 "slug": instance.vehicle.operator.slug,
