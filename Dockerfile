@@ -31,4 +31,4 @@ ENV PORT=8000 STATIC_ROOT=/staticfiles
 RUN ./manage.py collectstatic --noinput
 
 EXPOSE 8000
-CMD ["granian", "--host", "0.0.0.0", "--interface", "asginl", "--respawn-failed-workers", "buses.asgi:application"]
+CMD ["granian", "--host", "0.0.0.0", "--interface", "wsgi", "--respawn-failed-workers", "buses.wsgi:application"]
