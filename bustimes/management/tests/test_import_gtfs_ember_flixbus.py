@@ -10,7 +10,7 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 
 from busstops.models import DataSource, Operator, Region, Service, StopCode, StopPoint
-from vehicles.management.commands import import_gtfsr_ember
+from vehicles.management.commands import import_gtfsr_ember, import_gtfsr_flixbus
 
 from .test_import_gtfs import make_zipfile
 from ...models import Route, Trip
@@ -130,6 +130,21 @@ class FlixbusTest(TestCase):
         )
 
         self.assertEqual(Service.objects.count(), 2)
+
+        command = import_gtfsr_flixbus.Command()
+        command.do_source()
+        with (
+            time_machine.travel("2024-04-01 14:04:48+00:00"),
+            patch(
+                "vehicles.management.import_live_vehicles.redis_client",
+                fakeredis.FakeStrictRedis(),
+            ),
+            vcr.use_cassette(str(FIXTURES_DIR / "flixbus_gtfsr.yml")),
+        ):
+            with self.assertNumQueries(37):
+                command.update()
+            with self.assertNumQueries(1):
+                command.update()
 
     @time_machine.travel("2024-09-16")
     def test_import_gtfs_ember(self):
