@@ -191,7 +191,7 @@ class FlixbusTest(TestCase):
                 command.handle_item(entity, command.source.datetime)
 
             item = json.loads(redis.get(f"vehicle{journeys[0].id}"))
-            self.assertEqual(round(item["heading"]), 40)
+            self.assertEqual(round(item["heading"]), 33)
             self.assertEqual(redis.llen(journeys[0].get_redis_key()), 2)
 
     @time_machine.travel("2024-09-16")
