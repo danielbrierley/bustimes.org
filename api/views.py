@@ -330,14 +330,14 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
             )
             extra_data["trip"] = trip_serializer.data
 
-        if locations and current_trip:
+        if locations and (current_trip or not instance.vehicle_id):
             if instance.service_id:
                 params = {
                     "service_ids": [instance.service_id],
                     "trip_id": instance.trip_id,
                 }
             else:
-                params = {"vehicle_ids": [instance.vehicle_id]}
+                params = {"vehicle_ids": [instance.vehicle_id or instance.id]}
             if instance.trip:
                 params["trip_id"] = instance.trip_id
                 params["stop_times"] = instance.trip.stops
@@ -353,27 +353,30 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
                 "name": instance.vehicle.operator.name,
             }
 
-        next_previous_filter = {
-            "date": instance.date,
-            "vehicle_id": instance.vehicle_id,
-        }
-        try:
-            next_journey = instance.get_next_by_datetime(**next_previous_filter)
-        except VehicleJourney.DoesNotExist:
-            pass
-        else:
-            extra_data["next"] = {
-                "id": next_journey.id,
-                "datetime": timezone.localtime(next_journey.datetime, tzinfo),
+        if instance.vehicle_id:
+            next_previous_filter = {
+                "date": instance.date,
+                "vehicle_id": instance.vehicle_id,
             }
-        try:
-            previous_journey = instance.get_previous_by_datetime(**next_previous_filter)
-        except VehicleJourney.DoesNotExist:
-            pass
-        else:
-            extra_data["previous"] = {
-                "id": previous_journey.id,
-                "datetime": timezone.localtime(previous_journey.datetime, tzinfo),
-            }
+            try:
+                next_journey = instance.get_next_by_datetime(**next_previous_filter)
+            except VehicleJourney.DoesNotExist:
+                pass
+            else:
+                extra_data["next"] = {
+                    "id": next_journey.id,
+                    "datetime": timezone.localtime(next_journey.datetime, tzinfo),
+                }
+            try:
+                previous_journey = instance.get_previous_by_datetime(
+                    **next_previous_filter
+                )
+            except VehicleJourney.DoesNotExist:
+                pass
+            else:
+                extra_data["previous"] = {
+                    "id": previous_journey.id,
+                    "datetime": timezone.localtime(previous_journey.datetime, tzinfo),
+                }
 
         return Response(serializer.data | extra_data)
