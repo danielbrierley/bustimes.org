@@ -1,18 +1,18 @@
 import logging
-from django_filters.rest_framework import DjangoFilterBackend
 from datetime import datetime, timedelta
-from rest_framework import pagination, viewsets
-from rest_framework.decorators import action
-from rest_framework.exceptions import APIException
-from rest_framework.response import Response
+
+import numpy as np
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import Q
 from django.db.models.functions import Coalesce
 from django.utils import timezone
-
-import numpy as np
-
-from vehicles.time_aware_polyline import encode_time_aware_polyline
+from django_filters.rest_framework import DjangoFilterBackend
+from haversine import Unit, haversine_vector
+from rest_framework import pagination, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
+from rest_framework.response import Response
+from sql_util.utils import Exists
 
 from busstops.models import Operator, Service, StopPoint
 from bustimes.models import StopTime, Trip
@@ -24,11 +24,9 @@ from vehicles.models import (
     VehicleLocation,
     VehicleType,
 )
+from vehicles.time_aware_polyline import encode_time_aware_polyline
 from vehicles.utils import redis_client
 from vehicles.views import get_vehicle_locations
-
-from sql_util.utils import Exists
-from haversine import Unit, haversine_vector
 
 from . import filters, serializers
 
@@ -136,6 +134,8 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
     @staticmethod
     def get_stops(obj):
         trips = obj.get_trips()
+        multiple_trips = len(trips) > 1
+        order_by = ("trip__start", "id") if multiple_trips else ("id",)
         stops = (
             StopTime.objects.filter(trip__in=trips)
             .select_related("stop__locality")
@@ -144,7 +144,7 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
                 "stop__locality__search_vector",
                 "stop__locality__latlong",
             )
-            .order_by("trip__start", "id")
+            .order_by(*order_by)
             # .annotate(
             #     call_condition=Subquery(
             #         Call.objects.filter(
@@ -157,7 +157,7 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
         )
         if obj.notes.all():
             stops = stops.annotate(note_codes=ArrayAgg("notes__code"))
-        if len(trips) > 1:
+        if multiple_trips:
             stops = contiguous_stoptimes_only(stops, obj.id)
         return stops
 
@@ -315,9 +315,8 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
         current_trip = (
             instance.vehicle_id and instance.id == instance.vehicle.latest_journey_id
         )
-        if locations and current_trip:
-            if not instance.trip:
-                instance.trip = self.trip_from_siri(instance, locations)
+        if locations and current_trip and not instance.trip:
+            instance.trip = self.trip_from_siri(instance, locations)
 
         if instance.trip:
             instance.trip.destination_name = None
