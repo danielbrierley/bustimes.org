@@ -176,6 +176,10 @@ STATIC_URL = "/static/"
 STATIC_ROOT = os.environ.get("STATIC_ROOT", BASE_DIR / "staticfiles")
 STORAGES = {
     "default": {
+        "BACKEND": "django.core.files.storage.InMemoryStorage",
+    }
+    if TEST or DEBUG
+    else {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
             "region_name": "lon1",
