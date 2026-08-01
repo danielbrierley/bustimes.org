@@ -186,7 +186,7 @@ class Command(BaseCommand):
             stop.created_at = stop.modified_at
             self.stops_to_create.append(stop)
 
-    bulk_update_fields = [
+    bulk_update_fields = (
         "modified_at",
         "naptan_code",
         "latlong",
@@ -206,7 +206,7 @@ class Command(BaseCommand):
         "town",
         "active",
         "source",
-    ]
+    )
 
     def update_and_create(self):
         # create any new stop areas
@@ -232,13 +232,13 @@ class Command(BaseCommand):
         existing_stop_areas = StopArea.objects.in_bulk(
             [stop.stop_area_id for stop in stops]
         )
-        stop_areas_to_create = set(
+        stop_areas_to_create = {
             StopArea(
                 id=stop.stop_area_id, active=True, admin_area_id=stop.admin_area_id
             )
             for stop in stops
             if stop.stop_area_id not in existing_stop_areas
-        )
+        }
         StopArea.objects.bulk_create(stop_areas_to_create, batch_size=1000)
 
         # logger.info(
@@ -300,9 +300,9 @@ class Command(BaseCommand):
             admin_area.atco_code: admin_area
             for admin_area in AdminArea.objects.order_by()
         }
-        self.localities = set(
+        self.localities = {
             locality["pk"] for locality in Locality.objects.values("pk").order_by()
-        )
+        }
         atco_code_prefix = None
 
         self.stop_areas = {}

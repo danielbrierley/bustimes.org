@@ -1,19 +1,17 @@
 import logging
-
 from pathlib import Path
 
 import gtfs_kit
-
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Min, Subquery, OuterRef
+from django.db.models import Min, OuterRef, Subquery
 
-from busstops.models import DataSource, Operator, Service, StopPoint, ServiceColour
+from busstops.models import DataSource, Operator, Service, ServiceColour, StopPoint
 
 from ...download_utils import download_if_modified
+from ...gtfs_utils import MODES, do_route_links, get_calendars
 from ...models import Route, StopTime, Trip
-from ...gtfs_utils import get_calendars, MODES, do_route_links
 
 logger = logging.getLogger(__name__)
 

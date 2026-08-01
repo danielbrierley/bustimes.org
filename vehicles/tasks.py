@@ -1,27 +1,27 @@
 import functools
 import json
-from datetime import datetime, timedelta
 import zipfile
+from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.core.cache import cache
 from django.db import IntegrityError
 from django.db.models import Count, Q
 from django.utils import timezone
-from django.conf import settings
 from huey import crontab
 from huey.contrib.djhuey import db_periodic_task, db_task
 
 from busstops.models import DataSource, Operator
 
-from .utils import archive_avl_data
 from .management.commands import import_bod_avl
 from .models import (
     SiriSubscription,
     Vehicle,
+    VehicleCode,
     VehicleJourney,
     VehicleRevision,
-    VehicleCode,
 )
+from .utils import archive_avl_data
 
 
 @functools.cache

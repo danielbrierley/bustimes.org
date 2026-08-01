@@ -27,8 +27,8 @@ def _get_feed():
                 verify=False,
             )
             response.raise_for_status()
-        except requests.RequestException as e:
-            logger.exception(e)
+        except requests.RequestException:
+            logger.exception("error fetching NTA GTFS-R feed")
             return
         feed = gtfs_realtime_pb2.FeedMessage()
         feed.ParseFromString(response.content)
@@ -52,10 +52,12 @@ def get_trip_updates(feed_name) -> dict:
 
 
 def get_trip_update(trip, feed_name: str) -> dict:
-    if trip_id := trip.ticket_machine_code:
-        if trip_updates := get_trip_updates(feed_name):
-            if trip_id in trip_updates:
-                return trip_updates[trip_id]
+    if (
+        (trip_id := trip.ticket_machine_code)
+        and (trip_updates := get_trip_updates(feed_name))
+        and trip_id in trip_updates
+    ):
+        return trip_updates[trip_id]
 
 
 def get_expected_time(scheduled_time, stop_time_update, key):
@@ -125,7 +127,8 @@ def update_departure(departure: dict, trip_update: dict) -> None:
                 and "time" in stop_time_update["departure"]
             ):
                 time = datetime.fromtimestamp(
-                    int(stop_time_update["departure"]["time"])
+                    int(stop_time_update["departure"]["time"]),
+                    tz=ZoneInfo("Europe/Dublin"),
                 )
                 departure["live"] = time
 

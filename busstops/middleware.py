@@ -3,7 +3,6 @@ from http import HTTPStatus
 
 from django.http import HttpResponse
 from django.utils.cache import add_never_cache_headers
-
 from whitenoise.middleware import WhiteNoiseMiddleware
 
 

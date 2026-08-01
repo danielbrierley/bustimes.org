@@ -1,22 +1,22 @@
 import datetime
 import json
 from pathlib import Path
-from unittest.mock import patch
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 import fakeredis
 import time_machine
 import vcr
-from google.transit import gtfs_realtime_pb2
 from django.core.management import call_command
 from django.test import TestCase, override_settings
+from google.transit import gtfs_realtime_pb2
 
 from busstops.models import DataSource, Operator, Region, Service, StopCode, StopPoint
 from vehicles.management.commands import import_gtfsr_ember, import_gtfsr_flixbus
-
-from .test_import_gtfs import make_zipfile
-from ...models import Route, Trip
 from vehicles.models import Vehicle, VehicleJourney
+
+from ...models import Route, Trip
+from .test_import_gtfs import make_zipfile
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 
@@ -89,7 +89,7 @@ class FlixbusTest(TestCase):
             "bustimes.management.commands.import_gtfs_flixbus.download_if_modified",
             return_value=(
                 True,
-                datetime.datetime(2024, 6, 18, 10, 0, 0, tzinfo=datetime.timezone.utc),
+                datetime.datetime(2024, 6, 18, 10, 0, 0, tzinfo=datetime.UTC),
             ),
         ):
             call_command("import_gtfs_flixbus")
@@ -201,9 +201,7 @@ class FlixbusTest(TestCase):
                 "bustimes.management.commands.import_gtfs_ember.download_if_modified",
                 return_value=(
                     True,
-                    datetime.datetime(
-                        2024, 6, 18, 10, 0, 0, tzinfo=datetime.timezone.utc
-                    ),
+                    datetime.datetime(2024, 6, 18, 10, 0, 0, tzinfo=datetime.UTC),
                 ),
             ),
             TemporaryDirectory() as directory,

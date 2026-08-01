@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import namedtuple
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from time import sleep
 
 import requests
@@ -22,7 +22,7 @@ from tenacity import before_sleep_log, retry, wait_exponential
 from busstops.models import DataSource
 from bustimes.models import Route, Trip
 
-from ..models import Vehicle, VehicleJourney, VehicleCode
+from ..models import Vehicle, VehicleCode, VehicleJourney
 from ..utils import VEHICLE_POSITIONS_CHANNEL, calculate_bearing, redis_client
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,6 @@ class ImportLiveVehiclesCommand(BaseCommand):
     vehicles = Vehicle.objects.select_related("latest_journey__trip")
     wait = 66
     history = True
-    status = []
     status_key = None
     tzinfo = None
 
@@ -75,6 +74,7 @@ class ImportLiveVehiclesCommand(BaseCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.session = requests.Session()
+        self.status = []
         self.to_save = []
         self.journeys_to_create = {}
         self.journeys_to_update = []
@@ -85,7 +85,7 @@ class ImportLiveVehiclesCommand(BaseCommand):
         self.duplicate_vehicles = set()  # vehicles on 'two journeys at once'
 
     @staticmethod
-    def get_datetime(self):
+    def get_datetime():
         return
 
     @retry(
@@ -140,8 +140,8 @@ class ImportLiveVehiclesCommand(BaseCommand):
         if vehicle is None:
             try:
                 vehicle, _ = self.get_vehicle(item)
-            except Vehicle.MultipleObjectsReturned as e:
-                logger.exception(e)
+            except Vehicle.MultipleObjectsReturned:
+                logger.exception("multiple vehicles found")
                 return
             if not vehicle:
                 return
@@ -195,11 +195,11 @@ class ImportLiveVehiclesCommand(BaseCommand):
             and latest_journey
             and latest_journey.source_id != self.source.id
             and self.source.name != "Bus Open Data"
+            and ((dt or now) - latest_datetime).total_seconds()
+            < 300  # less than 5 minutes old
+            and (latest_journey.service_id or not journey.service_id)
         ):
-            if ((dt or now) - latest_datetime).total_seconds() < 300:
-                # less than 5 minutes old
-                if latest_journey.service_id or not journey.service_id:
-                    return  # defer to other source
+            return  # defer to other source
 
         if not location:
             location = self.create_vehicle_location(item)
@@ -267,16 +267,22 @@ class ImportLiveVehiclesCommand(BaseCommand):
                 journey.datetime = location.datetime
             if not journey.date:
                 journey.date = timezone.localdate(journey.datetime)
-                if journey.trip and journey.trip.start >= timedelta(days=1):
+                if (
+                    journey.trip
+                    and journey.trip.start >= timedelta(days=1)
+                    and timezone.localtime(journey.datetime).hour < 12
+                ):
                     # if the driver signed in before midnight on the service date,
                     # the calendar date is already correct — don't roll back
-                    if timezone.localtime(journey.datetime).hour < 12:
-                        journey.date -= timedelta(days=1)
+                    journey.date -= timedelta(days=1)
 
-            if journey.service_id and VehicleJourney.service.is_cached(journey):
-                if not journey.service.tracking:
-                    journey.service.tracking = True
-                    journey.service.save(update_fields=["tracking"])
+            if (
+                journey.service_id
+                and VehicleJourney.service.is_cached(journey)
+                and not journey.service.tracking
+            ):
+                journey.service.tracking = True
+                journey.service.save(update_fields=["tracking"])
 
             if not (
                 concurrent
@@ -327,8 +333,8 @@ class ImportLiveVehiclesCommand(BaseCommand):
                     self.vehicles_to_update,
                     ["latest_journey", "latest_journey_data"],
                 )
-            except IntegrityError as e:
-                logger.exception(e)
+            except IntegrityError:
+                logger.exception("error bulk updating vehicles")
             self.vehicles_to_update = []
 
         # update locations in Redis
@@ -387,8 +393,8 @@ class ImportLiveVehiclesCommand(BaseCommand):
 
         if geoadd:
             pipeline.geoadd("vehicle_location_locations", geoadd)
-        for key in sadd:
-            pipeline.sadd(key, *sadd[key])
+        for key, value in sadd.items():
+            pipeline.sadd(key, *value)
 
         if self.history:
             # add locations to journey history
@@ -399,8 +405,8 @@ class ImportLiveVehiclesCommand(BaseCommand):
 
         try:
             pipeline.execute()
-        except ConnectionError as e:
-            logger.exception(e)
+        except ConnectionError:
+            logger.exception("error executing redis pipeline")
 
         channel_layer = get_channel_layer()
         if channel_layer is not None and items:
@@ -458,7 +464,7 @@ class ImportLiveVehiclesCommand(BaseCommand):
             if vehicle_identity in vehicles_by_identity:
                 vehicle = vehicles_by_identity[vehicle_identity]
             else:
-                vehicle, created = self.get_vehicle(item)
+                vehicle, _created = self.get_vehicle(item)
                 # print(vehicle_identity, vehicle, created)
                 if vehicle:
                     VehicleCode.objects.create(
@@ -485,7 +491,7 @@ class ImportLiveVehiclesCommand(BaseCommand):
                 )
 
                 if result:
-                    location, vehicle = result
+                    _location, vehicle = result
 
                 self.journeys_ids_ids[vehicle_identity] = (
                     journey_identity,
@@ -526,9 +532,11 @@ class ImportLiveVehiclesCommand(BaseCommand):
             else:
                 vehicle_identities.add(vehicle_identity)
 
-            if self.identifiers.get(vehicle_identity) == self.get_item_identity(item):
-                if journey_identity == self.journeys_ids[vehicle_identity]:
-                    continue
+            if (
+                self.identifiers.get(vehicle_identity) == self.get_item_identity(item)
+                and journey_identity == self.journeys_ids[vehicle_identity]
+            ):
+                continue
             if (
                 vehicle_identity not in self.journeys_ids
                 or journey_identity != self.journeys_ids[vehicle_identity]
@@ -565,8 +573,8 @@ class ImportLiveVehiclesCommand(BaseCommand):
                         changed_journey_identities,
                         total_items,
                     ) = self.get_changed_items()
-                except requests.exceptions.RequestException as e:
-                    logger.exception(e)
+                except requests.exceptions.RequestException:
+                    logger.exception("error getting changed items")
                     return self.wait
 
             with sentry_sdk.start_span(name="handle quick items") as span:

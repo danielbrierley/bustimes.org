@@ -35,7 +35,7 @@ class EditVehicleForm(forms.Form):
             },
         )
 
-    field_order = [
+    field_order = (
         "withdrawn",
         "spare_ticket_machine",
         "fleet_number",
@@ -49,7 +49,7 @@ class EditVehicleForm(forms.Form):
         "previous_reg",
         "features",
         "notes",
-    ]
+    )
     spare_ticket_machine = forms.BooleanField(
         required=False,
         help_text="i.e. the ticket machine code is something like SPARE",
@@ -173,12 +173,11 @@ link to a picture to prove it. Be polite.""",
             self.fields["summary"].required = False
             self.fields["summary"].label = "Summary (optional)"
 
-        if not user.is_superuser:
-            if not (
-                vehicle.notes
-                or vehicle.operator_id in settings.ALLOW_VEHICLE_NOTES_OPERATORS
-            ):
-                del self.fields["notes"]
+        if not user.is_superuser and not (
+            vehicle.notes
+            or vehicle.operator_id in settings.ALLOW_VEHICLE_NOTES_OPERATORS
+        ):
+            del self.fields["notes"]
 
         if vehicle.is_spare_ticket_machine():
             del self.fields["notes"]

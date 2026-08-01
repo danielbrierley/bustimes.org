@@ -1,6 +1,6 @@
 import functools
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.contrib.gis.geos import Point
@@ -34,9 +34,7 @@ class Command(GTFSRCommand):
         feed = gtfs_realtime_pb2.FeedMessage()
         feed.ParseFromString(response.content)
 
-        self.source.datetime = datetime.fromtimestamp(
-            feed.header.timestamp, timezone.utc
-        )
+        self.source.datetime = datetime.fromtimestamp(feed.header.timestamp, UTC)
 
         for item in feed.entity:
             if item.HasField("vehicle") and item.vehicle.trip.trip_id.startswith("UK"):
@@ -48,9 +46,9 @@ class Command(GTFSRCommand):
         # so we track journeys with no Vehicle records
         return f"{item.vehicle.trip.trip_id} {item.vehicle.trip.start_date}"
 
-    @functools.lru_cache(maxsize=256)
+    @functools.lru_cache(maxsize=256)  # noqa: B019 - one instance per process
     def get_journey(self, trip_id, start_date, start_time):
-        date = datetime.strptime(start_date, "%Y%m%d").date()
+        date = datetime.strptime(start_date, "%Y%m%d").date()  # noqa: DTZ007
 
         journey = (
             VehicleJourney.objects.filter(

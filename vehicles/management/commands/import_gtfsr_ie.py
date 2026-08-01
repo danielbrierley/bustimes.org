@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -39,7 +39,7 @@ class Command(ImportLiveVehiclesCommand):
 
     @staticmethod
     def get_datetime(item):
-        return datetime.fromtimestamp(item.vehicle.timestamp, timezone.utc)
+        return datetime.fromtimestamp(item.vehicle.timestamp, UTC)
 
     @staticmethod
     def get_vehicle_identity(item):
@@ -67,9 +67,7 @@ class Command(ImportLiveVehiclesCommand):
         feed = gtfs_realtime_pb2.FeedMessage()
         feed.ParseFromString(response.content)
 
-        self.source.datetime = datetime.fromtimestamp(
-            feed.header.timestamp, timezone.utc
-        )
+        self.source.datetime = datetime.fromtimestamp(feed.header.timestamp, UTC)
 
         return feed.entity
 
@@ -79,7 +77,7 @@ class Command(ImportLiveVehiclesCommand):
 
     def get_journey(self, item, vehicle):
         # GTFS spec for working out datetimes:
-        start_date = datetime.strptime(
+        start_date = datetime.strptime(  # noqa: DTZ007 - tzinfo applied below
             f"{item.vehicle.trip.start_date} 12:00:00",
             "%Y%m%d %H:%M:%S",
         )

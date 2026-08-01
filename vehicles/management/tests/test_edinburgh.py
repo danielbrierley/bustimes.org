@@ -7,6 +7,7 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from busstops.models import DataSource, Operator, Region, Service
+
 from ...models import Vehicle
 from ..commands.lothian import Command
 

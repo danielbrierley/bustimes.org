@@ -3,13 +3,13 @@
 import datetime
 import logging
 from itertools import pairwise
-from django.contrib.gis.geos import LineString, Point
+
 from django.contrib.gis.db.models.functions import Distance, LineLocatePoint
+from django.contrib.gis.geos import LineString, Point
 
 from bustimes.models import RouteLink, StopTime, Trip
 from bustimes.utils import contiguous_stoptimes_only
 from vehicles.utils import calculate_bearing
-
 
 logger = logging.getLogger(__name__)
 

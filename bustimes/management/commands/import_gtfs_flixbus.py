@@ -3,8 +3,8 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-import pandas as pd
 import gtfs_kit
+import pandas as pd
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -14,8 +14,8 @@ from django.utils.dateparse import parse_duration
 from busstops.models import DataSource, Operator, Service, StopPoint
 
 from ...download_utils import download_if_modified
+from ...gtfs_utils import MODES, do_route_links, get_calendars
 from ...models import Route, StopTime, Trip
-from ...gtfs_utils import get_calendars, MODES, do_route_links
 
 logger = logging.getLogger(__name__)
 

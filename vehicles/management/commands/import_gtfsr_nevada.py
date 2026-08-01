@@ -1,14 +1,13 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from google.protobuf import json_format
 from google.transit import gtfs_realtime_pb2
 
-
 from busstops.models import DataSource
 from bustimes.models import Trip
 
-from ...models import Vehicle, VehicleJourney, Operator, Service
+from ...models import Operator, Service, Vehicle, VehicleJourney
 from .import_gtfsr_ie import Command as GTFSRCommand
 
 
@@ -38,9 +37,7 @@ class Command(GTFSRCommand):
         feed = gtfs_realtime_pb2.FeedMessage()
         feed.ParseFromString(response.content)
 
-        self.source.datetime = datetime.fromtimestamp(
-            feed.header.timestamp, timezone.utc
-        )
+        self.source.datetime = datetime.fromtimestamp(feed.header.timestamp, UTC)
 
         return feed.entity
 
@@ -59,7 +56,7 @@ class Command(GTFSRCommand):
 
         start_date = None
         if item.vehicle.trip.start_date:
-            start_date = datetime.strptime(
+            start_date = datetime.strptime(  # noqa: DTZ007 - tzinfo applied below
                 f"{item.vehicle.trip.start_date} 12:00:00",
                 "%Y%m%d %H:%M:%S",
             )

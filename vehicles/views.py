@@ -1,36 +1,37 @@
 import datetime
 import json
 import logging
-from itertools import pairwise, groupby
-from urllib.parse import unquote
+import subprocess
 from functools import partial
 from http import HTTPStatus
-import subprocess
+from itertools import groupby, pairwise
+from urllib.parse import unquote
+
 import xmltodict
 from django.conf import settings
-from django.contrib.auth.models import Permission
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.models import Permission
 from django.contrib.gis.geos import GEOSException
 from django.core.cache import cache
-from django.core.exceptions import PermissionDenied, BadRequest
+from django.core.exceptions import BadRequest, PermissionDenied
 from django.core.paginator import Paginator
 from django.db import IntegrityError, OperationalError, connection, transaction
-from django.db.models import Case, F, Max, OuterRef, Q, When, Value
+from django.db.models import Case, F, Max, OuterRef, Q, Value, When
 from django.db.models.aggregates import StringAgg
 from django.db.models.functions import Coalesce, Now
-from django.http import Http404, HttpResponse, JsonResponse, HttpResponseBadRequest
-from django.shortcuts import get_object_or_404, render, redirect
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.cache import (
     get_conditional_response,
-    set_response_etag,
     patch_cache_control,
+    set_response_etag,
 )
+from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_safe
-from django.utils.decorators import method_decorator
 from django.views.generic.detail import DetailView
 from haversine import haversine
 from redis.exceptions import ConnectionError
@@ -62,6 +63,8 @@ from .models import (
 from .rtpi import add_progress_and_delay
 from .tasks import handle_siri_post
 from .utils import apply_revision, get_revision, redis_client  # calculate_bearing,
+
+logger = logging.getLogger(__name__)
 
 
 def get_redirect_view(*args, **kwargs):
@@ -131,14 +134,16 @@ def vehicles(request):
 def liveries_css(request, version=0):
     styles = []
     liveries = Livery.objects.filter(published=True).order_by("left_css")
-    for _, liveries in groupby(liveries, lambda livery: livery.right_css):
-        liveries = list(liveries)
-        styles += liveries[0].get_styles([livery.id for livery in liveries])
+    for _, livery_group in groupby(liveries, lambda livery: livery.right_css):
+        livery_group = list(livery_group)
+        styles += livery_group[0].get_styles([livery.id for livery in livery_group])
     styles = "".join(styles)
     completed_process = subprocess.run(
-        ["lightningcss", "--minify"], input=styles.encode(), capture_output=True
+        ["lightningcss", "--minify"],
+        input=styles.encode(),
+        capture_output=True,
+        check=True,
     )
-    completed_process.check_returncode()
     styles = completed_process.stdout
     return HttpResponse(styles, content_type="text/css")
 
@@ -248,7 +253,7 @@ def operator_vehicles(request, slug=None, group_slug=None):
 
         context["features_column"] = any(vehicle.feature_names for vehicle in vehicles)
 
-    columns = set(key for vehicle in vehicles if vehicle.data for key in vehicle.data)
+    columns = {key for vehicle in vehicles if vehicle.data for key in vehicle.data}
     for vehicle in vehicles:
         vehicle.column_values = [
             vehicle.data and vehicle.data_get(key) or "" for key in columns
@@ -281,9 +286,7 @@ def operator_vehicles(request, slug=None, group_slug=None):
             for vehicle in vehicles
         )
 
-    garage_names = set(
-        vehicle.garage_name for vehicle in vehicles if vehicle.garage_name
-    )
+    garage_names = {vehicle.garage_name for vehicle in vehicles if vehicle.garage_name}
 
     context = {
         **context,
@@ -466,7 +469,7 @@ def get_vehicle_locations(
                     if vehicle.latest_journey_id == item["journey_id"]:
                         journeys_to_cache_later[journey_cache_key] = journey
                     else:
-                        logging.warning(
+                        logger.warning(
                             f"{vehicle=} {vehicle.latest_journey_id=} {item['journey_id']=}"
                         )
                     item.update(journey)
@@ -630,10 +633,9 @@ def journeys_list(request, journeys, service=None, vehicle=None) -> dict:
 
         journeys = journeys.filter(date=date).select_related("trip").order_by("id")
 
-        if dates:
-            if date not in dates:
-                dates.append(date)
-                dates.sort()
+        if dates and date not in dates:
+            dates.append(date)
+            dates.sort()
 
         context["journeys"] = journeys
 
@@ -778,11 +780,11 @@ class VehicleDetailView(DetailView):
             context["title"] = str(self.object)
 
         if "journeys" in context:
-            garages = set(
+            garages = {
                 journey.trip.garage_id
                 for journey in context["journeys"]
                 if journey.trip and journey.trip.garage_id
-            )
+            }
             if len(garages) == 1:
                 context["garage"] = Garage.objects.get(id=garages.pop())
 
@@ -808,11 +810,14 @@ class VehicleDetailView(DetailView):
     def render_to_response(self, context):
         response = super().render_to_response(context)
 
-        if self.object.withdrawn and "potential_duplicates" in context:
-            if not all(
+        if (
+            self.object.withdrawn
+            and "potential_duplicates" in context
+            and not all(
                 vehicle.withdrawn for vehicle in context["potential_duplicates"]
-            ):
-                response.status_code = HTTPStatus.NOT_FOUND
+            )
+        ):
+            response.status_code = HTTPStatus.NOT_FOUND
 
         return response
 
@@ -1070,6 +1075,10 @@ def latest_journey_debug(request, **kwargs):
     return JsonResponse(vehicle.latest_journey_data, safe=False)
 
 
+class _Rollback(Exception):
+    """raised to roll back the atomic block in the debug view below"""
+
+
 def debug(request):
     form = forms.DebuggerForm(request.POST or None)
     result = None
@@ -1087,12 +1096,12 @@ def debug(request):
                 with transaction.atomic():
                     command = import_bod_avl.Command()
                     command.do_source()
-                    vehicle, created = command.get_vehicle(item)
+                    vehicle, _created = command.get_vehicle(item)
                     journey = command.get_journey(item, vehicle)
                     if not journey.datetime:
                         journey.datetime = command.get_datetime(item)
-                    raise Exception
-            except Exception:
+                    raise _Rollback
+            except _Rollback:
                 pass
             connection.force_debug_cursor = False
 

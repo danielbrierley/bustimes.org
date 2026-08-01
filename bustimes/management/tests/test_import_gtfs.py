@@ -12,8 +12,8 @@ from django.test import TestCase, override_settings
 
 from busstops.models import AdminArea, DataSource, Operator, Region, Service, StopPoint
 
-from ...models import Route, Trip
 from ...download_utils import download_if_modified
+from ...models import Route, Trip
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 
@@ -99,23 +99,35 @@ class GTFSTest(TestCase):
         self.assertEqual(
             sorted(errors.output),
             [
-                "ERROR:bustimes.download_utils:<Response [404]> "
-                "https://www.transportforireland.ie/transitData/Data/GTFS_Mortons.zip",
-                "ERROR:bustimes.download_utils:<Response [404]> "
-                "https://www.transportforireland.ie/transitData/Data/GTFS_Mortons.zip",
-                "ERROR:bustimes.download_utils:<Response [404]> "
-                "https://www.transportforireland.ie/transitData/Data/GTFS_Seamus_Doherty.zip",
-                "ERROR:bustimes.download_utils:<Response [404]> "
-                "https://www.transportforireland.ie/transitData/Data/GTFS_Seamus_Doherty.zip",
+                (
+                    "ERROR:bustimes.download_utils:<Response [404]> "
+                    "https://www.transportforireland.ie/transitData/Data/GTFS_Mortons.zip"
+                ),
+                (
+                    "ERROR:bustimes.download_utils:<Response [404]> "
+                    "https://www.transportforireland.ie/transitData/Data/GTFS_Mortons.zip"
+                ),
+                (
+                    "ERROR:bustimes.download_utils:<Response [404]> "
+                    "https://www.transportforireland.ie/transitData/Data/GTFS_Seamus_Doherty.zip"
+                ),
+                (
+                    "ERROR:bustimes.download_utils:<Response [404]> "
+                    "https://www.transportforireland.ie/transitData/Data/GTFS_Seamus_Doherty.zip"
+                ),
             ],
         )
         self.assertEqual(
             warnings.output,
             [
-                "WARNING:bustimes.management.commands.import_gtfs:"
-                "trip 2868_105 has no stop times",
-                "WARNING:bustimes.management.commands.import_gtfs:"
-                "trip 2868_105 has no stop times",
+                (
+                    "WARNING:bustimes.management.commands.import_gtfs:"
+                    "trip 2868_105 has no stop times"
+                ),
+                (
+                    "WARNING:bustimes.management.commands.import_gtfs:"
+                    "trip 2868_105 has no stop times"
+                ),
             ],
         )
 

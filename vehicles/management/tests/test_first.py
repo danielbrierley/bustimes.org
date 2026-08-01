@@ -3,12 +3,13 @@ from unittest import mock
 
 import fakeredis
 import vcr
-from django.test import TransactionTestCase
 from django.core.management import call_command
+from django.test import TransactionTestCase
 
 from busstops.models import DataSource, Operator, Service
-from ..commands.import_first import Command
+
 from ...models import VehicleJourney
+from ..commands.import_first import Command
 
 
 class FirstTest(TransactionTestCase):

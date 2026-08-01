@@ -1,8 +1,8 @@
 import math
 
 import redis.asyncio
-from django.core.cache import caches
 from django.conf import settings
+from django.core.cache import caches
 from django.core.cache.backends.base import InvalidCacheBackendError
 
 from .models import VehicleRevision, VehicleRevisionFeature
@@ -62,7 +62,7 @@ def calculate_bearing(a, b):
     if bearing_degrees < 0:
         bearing_degrees += 360
 
-    return int(round(bearing_degrees))
+    return round(bearing_degrees)
 
 
 def get_revision(vehicle, data):

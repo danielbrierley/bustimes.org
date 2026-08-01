@@ -18,7 +18,7 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
 CSRF_FAILURE_VIEW = "busstops.views.csrf_failure"
 
 TEST = "test" in sys.argv or "pytest" in sys.argv[0]
-DEBUG = bool(os.environ.get("DEBUG", False))
+DEBUG = bool(os.environ.get("DEBUG"))
 
 DEFAULT_FROM_EMAIL = '"bustimes.org" <bustimes.org@bustimes.org>'
 
@@ -291,15 +291,11 @@ def traces_sampler(context):
         return 0
     if "__profile__" in url:
         return 1
-    if (
-        url == "/version"
-        or url.startswith("/vehicles.json")
-        or url.startswith("/stops.json")
-        or url.startswith("/static/")
-        or url.startswith("/journeys/")
+    if url == "/version" or url.startswith(
+        ("/vehicles.json", "/stops.json", "/static/", "/journeys/")
     ):
         return 0
-    if url.startswith("/stops/") or url.startswith("/services/"):
+    if url.startswith(("/stops/", "/services/")):
         return 0.00005
     if url.startswith("/vehicles"):
         return 0.00001
@@ -309,7 +305,6 @@ def traces_sampler(context):
 if not TEST:  # pragma: nocover
     if "SENTRY_DSN" in os.environ:
         import sentry_sdk
-
         from sentry_sdk.integrations.django import DjangoIntegration
         from sentry_sdk.integrations.huey import HueyIntegration
         from sentry_sdk.integrations.logging import ignore_logger

@@ -5,7 +5,6 @@ import shapely.ops as so
 
 from .models import Calendar, CalendarDate, RouteLink
 
-
 MODES = {
     0: "tram",
     2: "rail",
@@ -66,7 +65,11 @@ def get_calendars(feed, source) -> dict:
 
 
 def do_route_links(
-    feed: gtfs_kit.feed.Feed, source, routes: dict, stops: dict, stop_codes: dict = None
+    feed: gtfs_kit.feed.Feed,
+    source,
+    routes: dict,
+    stops: dict,
+    stop_codes: dict | None = None,
 ):
     try:
         trips = feed.get_trips(as_gdf=True).drop_duplicates("shape_id")

@@ -1,8 +1,8 @@
 """Tests for the buses app"""
 
-from django.test import TestCase, RequestFactory
+from django.test import RequestFactory, TestCase
 
-from . import utils, wsgi, asgi
+from . import asgi, utils, wsgi
 
 
 class UtilsTests(TestCase):

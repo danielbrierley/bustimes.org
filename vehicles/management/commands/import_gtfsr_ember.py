@@ -1,11 +1,10 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from django.core.cache import cache
+from django.db.models import Q
 from google.protobuf import json_format
 from google.transit import gtfs_realtime_pb2
-from django.core.cache import cache
-
-from django.db.models import Q
 
 from busstops.models import DataSource
 from bustimes.models import Trip
@@ -39,9 +38,7 @@ class Command(GTFSRCommand):
         }
         cache.set("ember_trip_updates", trip_updates, 300)
 
-        self.source.datetime = datetime.fromtimestamp(
-            feed.header.timestamp, timezone.utc
-        )
+        self.source.datetime = datetime.fromtimestamp(feed.header.timestamp, UTC)
 
         # the feed contains both vehicle positions and alerts (and possibly other entities)
         for item in feed.entity:
@@ -60,7 +57,7 @@ class Command(GTFSRCommand):
     def get_journey(self, item, vehicle):
         journey = VehicleJourney(code=item.vehicle.trip.trip_id)
 
-        start_date = datetime.strptime(
+        start_date = datetime.strptime(  # noqa: DTZ007 - only .date() is used
             f"{item.vehicle.trip.start_date} 12:00:00",
             "%Y%m%d %H:%M:%S",
         )

@@ -1,5 +1,6 @@
-from django.contrib.gis.geos import Polygon
 from datetime import datetime
+
+from django.contrib.gis.geos import Polygon
 from django.utils.timezone import make_aware
 
 

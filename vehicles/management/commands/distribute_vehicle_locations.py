@@ -37,8 +37,8 @@ class Command(BaseCommand):
                             f"vehicle_location{item['id']}",
                             {"type": "move_vehicles", "items": [item]},
                         )
-            except ConnectionError as e:
-                logger.exception(e)
+            except ConnectionError:
+                logger.exception("error distributing vehicle locations")
 
     def handle(self, *args, **options):
         asyncio.run(self.run())

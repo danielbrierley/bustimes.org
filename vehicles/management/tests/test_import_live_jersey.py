@@ -1,16 +1,21 @@
 from pathlib import Path
+from unittest.mock import patch
+
 import fakeredis
 import time_machine
 import vcr
-from unittest.mock import patch
-from django.test import TestCase
 from django.core.management import call_command
-from busstops.models import Region, Operator, StopPoint
+from django.test import TestCase
+
+from busstops.models import Operator, Region, StopPoint
 
 from ...models import VehicleJourney
 
-
 VCR_DIR = Path(__file__).resolve().parent / "vcr"
+
+
+class StopLoop(Exception):
+    """raised to break out of the command's polling loop in tests"""
 
 
 class JerseyImportTest(TestCase):
@@ -54,9 +59,9 @@ class JerseyImportTest(TestCase):
             ),
             patch(
                 "vehicles.management.import_live_vehicles.sleep",
-                side_effect=[None, None, Exception],
+                side_effect=[None, None, StopLoop],
             ),
-            self.assertRaises(Exception),
+            self.assertRaises(StopLoop),
         ):
             call_command("import_live_jersey")
 

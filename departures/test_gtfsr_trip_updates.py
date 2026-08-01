@@ -8,6 +8,7 @@ from django.test import TestCase, override_settings
 
 from busstops.models import DataSource, Operator, Service, StopPoint, StopUsage
 from bustimes.models import Calendar, Route, StopTime, Trip
+
 from . import gtfsr
 
 

@@ -1,8 +1,9 @@
 import hashlib
-import requests
 
+import requests
 from django.conf import settings
 from django.core.files.base import ContentFile
+
 from .models import Photo
 
 

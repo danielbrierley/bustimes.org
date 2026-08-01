@@ -95,3 +95,4 @@ unsafe-fixes = true
 
 [tool.ruff.lint]
 extend-select = ["SIM117"]
+ignore = ["RUF012"]

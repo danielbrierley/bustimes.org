@@ -21,7 +21,7 @@ class VehicleTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VehicleType
-        fields = ["id", "name", "style", "fuel", "double_decker", "coach", "electric"]
+        fields = ("id", "name", "style", "fuel", "double_decker", "coach", "electric")
 
 
 class VehicleSerializer(serializers.ModelSerializer):
@@ -54,7 +54,7 @@ class VehicleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vehicle
         depth = 1
-        fields = [
+        fields = (
             "id",
             "slug",
             "fleet_number",
@@ -70,13 +70,13 @@ class VehicleSerializer(serializers.ModelSerializer):
             "notes",
             "withdrawn",
             "special_features",
-        ]
+        )
 
 
 class OperatorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Operator
-        fields = [
+        fields = (
             "noc",
             "slug",
             "name",
@@ -85,13 +85,13 @@ class OperatorSerializer(serializers.ModelSerializer):
             "region_id",
             "url",
             "twitter",
-        ]
+        )
 
 
 class ServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
-        fields = [
+        fields = (
             "id",
             "slug",
             "line_name",
@@ -100,7 +100,7 @@ class ServiceSerializer(serializers.ModelSerializer):
             "mode",
             "operator",
             "modified_at",
-        ]
+        )
 
 
 class StopSerializer(serializers.ModelSerializer):
@@ -121,7 +121,7 @@ class StopSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StopPoint
-        fields = [
+        fields = (
             "atco_code",
             "naptan_code",
             "common_name",
@@ -138,13 +138,13 @@ class StopSerializer(serializers.ModelSerializer):
             "created_at",
             "modified_at",
             "active",
-        ]
+        )
 
 
 class LiverySerializer(serializers.ModelSerializer):
     class Meta:
         model = Livery
-        fields = [
+        fields = (
             "id",
             "name",
             "left_css",
@@ -152,25 +152,25 @@ class LiverySerializer(serializers.ModelSerializer):
             "white_text",
             "text_colour",
             "stroke_colour",
-        ]
+        )
 
 
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
-        fields = [
+        fields = (
             "code",
             "text",
-        ]
+        )
 
 
 class GarageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Garage
-        fields = [
+        fields = (
             "code",
             "name",
-        ]
+        )
 
 
 class TripSerializer(serializers.ModelSerializer):
@@ -268,7 +268,7 @@ class TripSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Trip
-        fields = [
+        fields = (
             "id",
             "vehicle_journey_code",
             "ticket_machine_code",
@@ -280,7 +280,7 @@ class TripSerializer(serializers.ModelSerializer):
             "operator",
             "notes",
             "times",
-        ]
+        )
 
 
 class VehicleJourneySerializer(serializers.ModelSerializer):
@@ -297,7 +297,7 @@ class VehicleJourneySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VehicleJourney
-        fields = [
+        fields = (
             "id",
             "datetime",
             "date",
@@ -305,4 +305,4 @@ class VehicleJourneySerializer(serializers.ModelSerializer):
             "route_name",
             "destination",
             "trip_id",
-        ]
+        )

@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 
 import requests
 import sentry_sdk
-from lxml import etree
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry
 from django.core.cache import cache
@@ -14,6 +13,7 @@ from django.db import IntegrityError
 from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_duration
+from lxml import etree
 
 from busstops.models import (
     Operator,
@@ -26,7 +26,6 @@ from bustimes.models import Route, Trip
 
 from ...models import Vehicle, VehicleJourney, VehicleLocation
 from ..import_live_vehicles import ImportLiveVehiclesCommand, Status
-
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +127,7 @@ class Command(ImportLiveVehiclesCommand):
     def get_datetime(item):
         return datetime.fromisoformat(item["RecordedAtTime"])
 
-    @functools.cache
+    @functools.cache  # noqa: B019 - one Command instance per process run
     def get_operator(self, operator_ref):
         # all operators with a matching OperatorCode,
         # or (if no such OperatorCode) the one with a matching id
@@ -214,12 +213,15 @@ class Command(ImportLiveVehiclesCommand):
                 defaults["fleet_number"] = fleet_number
                 reg = reg.replace("_", "")
                 defaults["reg"] = reg
-        if "fleet_number" not in defaults and vehicle_unique_id:
-            # VehicleUniqueId
-            if len(vehicle_unique_id) < len(vehicle_ref):
-                defaults["fleet_code"] = vehicle_unique_id
-                if vehicle_unique_id.isdigit():
-                    defaults["fleet_number"] = vehicle_unique_id
+        # VehicleUniqueId
+        if (
+            "fleet_number" not in defaults
+            and vehicle_unique_id
+            and len(vehicle_unique_id) < len(vehicle_ref)
+        ):
+            defaults["fleet_code"] = vehicle_unique_id
+            if vehicle_unique_id.isdigit():
+                defaults["fleet_number"] = vehicle_unique_id
 
         vehicles = vehicles.filter(condition)
 
@@ -729,8 +731,8 @@ class Command(ImportLiveVehiclesCommand):
                         changed_journey_identities,
                         total_items,
                     ) = self.get_changed_items()
-                except requests.exceptions.RequestException as e:
-                    logger.exception(e)
+                except requests.exceptions.RequestException:
+                    logger.exception("error getting changed items")
                     self.session.close()
                     self.session = requests.Session()
                     return 30

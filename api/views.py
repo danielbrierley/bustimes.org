@@ -30,6 +30,8 @@ from vehicles.views import get_vehicle_locations
 
 from . import filters, serializers
 
+logger = logging.getLogger(__name__)
+
 
 class BadException(APIException):
     status_code = 400
@@ -57,7 +59,7 @@ class VehicleViewSet(viewsets.ReadOnlyModelViewSet):
         .order_by("id")
     )
     serializer_class = serializers.VehicleSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.VehicleFilter
     pagination_class = LimitOffsetPagination
 
@@ -65,14 +67,14 @@ class VehicleViewSet(viewsets.ReadOnlyModelViewSet):
 class LiveryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Livery.objects.order_by("id")
     serializer_class = serializers.LiverySerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.LiveryFilter
 
 
 class VehicleTypeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = VehicleType.objects.all()
     serializer_class = serializers.VehicleTypeSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.VehicleTypeFilter
 
 
@@ -86,14 +88,14 @@ class OperatorViewSet(viewsets.ReadOnlyModelViewSet):
     )
     serializer_class = serializers.OperatorSerializer
     pagination_class = CursorPagination
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.OperatorFilter
 
 
 class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Service.objects.filter(current=True).prefetch_related("operator")
     serializer_class = serializers.ServiceSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.ServiceFilter
 
 
@@ -112,7 +114,7 @@ class StopViewSet(viewsets.ReadOnlyModelViewSet):
     )
     serializer_class = serializers.StopSerializer
     pagination_class = CursorPagination
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.StopFilter
 
 
@@ -128,7 +130,7 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
     )
     serializer_class = serializers.TripSerializer
     pagination_class = CursorPagination
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.TripFilter
 
     @staticmethod
@@ -171,7 +173,7 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = VehicleJourney.objects.select_related("vehicle")
     serializer_class = serializers.VehicleJourneySerializer
     pagination_class = CursorPaginationWithSmallerPageSize
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = filters.VehicleJourneyFilter
 
     def get_queryset(self):
@@ -201,8 +203,8 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
             haversine_vector_results = haversine_vector(
                 stop_coords, vehicle_coords, Unit.METERS, comb=True
             )
-        except ValueError as e:
-            logging.exception(e)
+        except ValueError:
+            logger.exception("error calculating vehicle headings")
             return
 
         for distances, location in zip(haversine_vector_results, locations):
