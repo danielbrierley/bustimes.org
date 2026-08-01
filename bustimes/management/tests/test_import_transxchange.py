@@ -644,7 +644,7 @@ class ImportTransXChangeTest(TestCase):
         )
 
         # Has some journeys that operate on 1 May 2017
-        with time_machine.travel(date(2017, 4, 28)):
+        with time_machine.travel("2017-04-28T00:00:00Z"):
             response = self.client.get(service.get_absolute_url())
         timetable = response.context_data["timetable"]
         self.assertEqual(timetable.date, date(2017, 5, 1))

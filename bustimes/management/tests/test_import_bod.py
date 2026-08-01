@@ -58,7 +58,7 @@ class ImportBusOpenDataTest(TestCase):
         cls.user = User.objects.create()
 
     @use_cassette(str(FIXTURES_DIR / "bod_lynx.yaml"))
-    @time_machine.travel(datetime.datetime(2020, 5, 1), tick=False)  # noqa: DTZ001
+    @time_machine.travel("2020-05-01T00:00:00Z", tick=False)
     def test_import_bod(self):
         admin_area = AdminArea.objects.create(
             id=91, atco_code="290", name="Norfolk", region_id="EA"
@@ -436,7 +436,7 @@ Lynx/Bus Open Data Service (BODS)</a>, <time datetime="2020-04-01">1 April 2020<
             ],
         )
 
-    @time_machine.travel(datetime.datetime(2020, 6, 10))  # noqa: DTZ001
+    @time_machine.travel("2020-06-10T00:00:00Z")
     def test_import_stagecoach(self):
         source = TimetableDataSource.objects.create(
             name="Stagecoach East",
