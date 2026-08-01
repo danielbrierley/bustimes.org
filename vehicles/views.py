@@ -1032,9 +1032,10 @@ def vehicle_edits(request):
         .order_by("-id")
     )
 
-    f = filters.VehicleRevisionFilter(
-        request.GET or {"status": "approved"}, queryset=revisions
-    )
+    data = request.GET.copy()
+    data.setdefault("status", "approved")
+
+    f = filters.VehicleRevisionFilter(data, queryset=revisions)
     if request.user.is_anonymous or not (
         request.user.trusted
         or request.user.is_superuser
