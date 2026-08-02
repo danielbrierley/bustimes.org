@@ -5,6 +5,9 @@ from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import requests
+from asgiref.sync import async_to_sync
+from channels.exceptions import ChannelFull
+from channels.layers import get_channel_layer
 from django.contrib.gis.geos import Point
 from django.utils.dateparse import parse_duration
 from google.transit import gtfs_realtime_pb2
@@ -13,7 +16,7 @@ from busstops.models import DataSource
 from bustimes.models import Trip
 
 from ...models import Livery, VehicleJourney
-from ...utils import calculate_bearing
+from ...utils import VEHICLE_POSITIONS_CHANNEL, calculate_bearing
 from .. import import_live_vehicles
 from .import_gtfsr_ie import Command as GTFSRCommand
 
@@ -189,7 +192,6 @@ class Command(GTFSRCommand):
             redis_json["service"]["url"] = journey.service.get_absolute_url()
 
         pipeline = redis_client.pipeline(transaction=False)
-        # pipeline.rpush(*location.get_appendage())
         pipeline.geoadd(
             "vehicle_location_locations",
             [location.latlong.x, location.latlong.y, journey.id],
@@ -199,3 +201,25 @@ class Command(GTFSRCommand):
         pipeline.sadd("operatorFLIXvehicles", journey.id)
         pipeline.set(f"vehicle{journey.id}", json.dumps(redis_json), ex=900)
         pipeline.execute()
+
+        channel_layer = get_channel_layer()
+        if channel_layer is not None:
+            try:
+                async_to_sync(channel_layer.send)(
+                    VEHICLE_POSITIONS_CHANNEL,
+                    {
+                        "type": "move_vehicles",
+                        "items": [
+                            (
+                                journey.get_redis_key(),
+                                int(location.datetime.timestamp()),
+                                location.latlong.x,
+                                location.latlong.y,
+                            )
+                        ],
+                    },
+                )
+            except ChannelFull as e:
+                # distribute_vehicle_locations worker isn't keeping up (or is down) -
+                # drop this update rather than blocking the importer
+                logger.error(e)

@@ -405,10 +405,6 @@ class ImportLiveVehiclesCommand(BaseCommand):
         for key, value in sadd.items():
             pipeline.sadd(key, *value)
 
-        # for location, vehicle in self.to_save:
-        #     if location.latlong:
-        #         pipeline.rpush(*location.get_appendage())
-
         try:
             pipeline.execute()
         except ConnectionError:

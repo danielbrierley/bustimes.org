@@ -6,16 +6,13 @@ from channels.layers import get_channel_layer
 from django.core.management.base import BaseCommand
 from redis.exceptions import ConnectionError
 
+from ...models import VehicleLocation
 from ...time_aware_polyline import (
     decode_time_aware_polyline,
+    encode_time_aware_polyline,
     extend_time_aware_polyline,
 )
-from ...utils import (
-    VEHICLE_POSITIONS_CHANNEL,
-    # VEHICLE_WATCHERS_KEY,
-    # redis_client,
-    async_redis_client,
-)
+from ...utils import VEHICLE_POSITIONS_CHANNEL, async_redis_client
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +44,9 @@ class PolylineWrapper:
 
 class Command(BaseCommand):
     async def run(self):
-        # max_id = VehicleJourney.objects.order_by("-id").first()
-
         @functools.lru_cache(maxsize=50_000)
         def get_polyline(uuid):
             return PolylineWrapper()
-
-        # cache = {}
 
         channel_layer = get_channel_layer()
 
@@ -62,7 +55,6 @@ class Command(BaseCommand):
                 message = await channel_layer.receive(VEHICLE_POSITIONS_CHANNEL)
 
                 items = message["items"]
-                print(items)
 
                 polylines = {uuid: get_polyline(uuid) for (uuid, _, _, _) in items}
 
@@ -78,7 +70,6 @@ class Command(BaseCommand):
                     pipeline.type(uuid)
 
                 types = await pipeline.execute()
-                print(types)
 
                 list_uuids = []
                 string_uuids = []
@@ -92,8 +83,31 @@ class Command(BaseCommand):
                     elif type == b"string":
                         string_uuids.append(pair[0])
 
-                # lists = await list_pipe.execute()
+                lists = await list_pipe.execute()
                 strings = await async_redis_client.mget(string_uuids)
+
+                for (uuid, wrapper), raw_locations in zip(list_uuids, lists):
+                    if not raw_locations:
+                        continue
+                    decoded = sorted(
+                        (
+                            VehicleLocation.decode_appendage(loc)
+                            for loc in raw_locations
+                        ),
+                        key=lambda loc: loc["id"],
+                    )
+                    wrapper.set_polyline(
+                        encode_time_aware_polyline(
+                            [
+                                [
+                                    loc["coordinates"][0],
+                                    loc["coordinates"][1],
+                                    loc["id"],
+                                ]
+                                for loc in decoded
+                            ]
+                        )
+                    )
 
                 for uuid, string in zip(string_uuids, strings):
                     polylines[uuid].set_polyline(string)
