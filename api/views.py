@@ -8,6 +8,7 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from haversine import Unit, haversine_vector
+from redis.exceptions import ResponseError
 from rest_framework import pagination, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException
@@ -268,44 +269,48 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
 
         locations = []
         if redis_client:
-            raw_locations = redis_client.lrange(instance.get_redis_key(), 0, -1)
-            locations = [
-                VehicleLocation.decode_appendage(loc, tzinfo) for loc in raw_locations
-            ]
-            locations.sort(key=lambda loc: loc["datetime"])
-
-            filtered = []
-            stationary = False
-            previous = None
-            previous_coords = None
-            for location in locations:
-                coords = location["coordinates"]
-                if previous_coords:
-                    dx = coords[0] - previous_coords[0]
-                    dy = coords[1] - previous_coords[1]
-                    if dx * dx + dy * dy < 2.5e-7:  # 0.0005 degrees squared
-                        stationary = True
-                    elif stationary:
-                        filtered.append(previous)
-                        stationary = False
-                if not stationary:
-                    filtered.append(location)
-                    previous_coords = coords
-                previous = location
-            if stationary:
-                filtered.append(location)
-            locations = filtered
-
-            polyline = encode_time_aware_polyline(
-                [
-                    [
-                        loc["coordinates"][0],
-                        loc["coordinates"][1],
-                        int(loc["datetime"].timestamp()),
-                    ]
-                    for loc in locations
+            try:
+                raw_locations = redis_client.lrange(instance.get_redis_key(), 0, -1)
+                locations = [
+                    VehicleLocation.decode_appendage(loc, tzinfo)
+                    for loc in raw_locations
                 ]
-            )
+                locations.sort(key=lambda loc: loc["datetime"])
+
+                filtered = []
+                stationary = False
+                previous = None
+                previous_coords = None
+                for location in locations:
+                    coords = location["coordinates"]
+                    if previous_coords:
+                        dx = coords[0] - previous_coords[0]
+                        dy = coords[1] - previous_coords[1]
+                        if dx * dx + dy * dy < 2.5e-7:  # 0.0005 degrees squared
+                            stationary = True
+                        elif stationary:
+                            filtered.append(previous)
+                            stationary = False
+                    if not stationary:
+                        filtered.append(location)
+                        previous_coords = coords
+                    previous = location
+                if stationary:
+                    filtered.append(location)
+                locations = filtered
+
+                polyline = encode_time_aware_polyline(
+                    [
+                        [
+                            loc["coordinates"][0],
+                            loc["coordinates"][1],
+                            int(loc["datetime"].timestamp()),
+                        ]
+                        for loc in locations
+                    ]
+                )
+            except ResponseError:
+                polyline = redis_client.get(instance.get_redis_key())
             extra_data["time_aware_polyline"] = polyline
 
         if instance.service_id:
@@ -317,7 +322,7 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
         current_trip = (
             instance.vehicle_id and instance.id == instance.vehicle.latest_journey_id
         )
-        if locations and current_trip and not instance.trip:
+        if current_trip and not instance.trip:
             instance.trip = self.trip_from_siri(instance, locations)
 
         if instance.trip:
@@ -331,7 +336,7 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
             )
             extra_data["trip"] = trip_serializer.data
 
-        if locations and (current_trip or not instance.vehicle_id):
+        if current_trip or not instance.vehicle_id:
             if instance.service_id:
                 params = {
                     "service_ids": [instance.service_id],

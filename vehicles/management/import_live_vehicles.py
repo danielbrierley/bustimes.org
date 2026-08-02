@@ -63,7 +63,6 @@ class ImportLiveVehiclesCommand(BaseCommand):
     url = ""
     vehicles = Vehicle.objects.select_related("latest_journey__trip")
     wait = 66
-    history = True
     status_key = None
     tzinfo = None
 
@@ -344,6 +343,7 @@ class ImportLiveVehiclesCommand(BaseCommand):
         geoadd = []
         sadd = {}
         items = []
+        appendages = []
 
         for location, vehicle in self.to_save:
             if not location.latlong or (
@@ -391,17 +391,23 @@ class ImportLiveVehiclesCommand(BaseCommand):
             )
             # can't use 'mset' cos it doesn't let us specify an expiry
 
+            appendages.append(
+                (
+                    location.journey.get_redis_key(),
+                    int(location.datetime.timestamp()),
+                    location.latlong.x,
+                    location.latlong.y,
+                )
+            )
+
         if geoadd:
             pipeline.geoadd("vehicle_location_locations", geoadd)
         for key, value in sadd.items():
             pipeline.sadd(key, *value)
 
-        if self.history:
-            # add locations to journey history
-
-            for location, vehicle in self.to_save:
-                if location.latlong:
-                    pipeline.rpush(*location.get_appendage())
+        # for location, vehicle in self.to_save:
+        #     if location.latlong:
+        #         pipeline.rpush(*location.get_appendage())
 
         try:
             pipeline.execute()
@@ -413,10 +419,7 @@ class ImportLiveVehiclesCommand(BaseCommand):
             try:
                 async_to_sync(channel_layer.send)(
                     VEHICLE_POSITIONS_CHANNEL,
-                    {
-                        "type": "move_vehicles",
-                        "items": items,
-                    },
+                    {"type": "move_vehicles", "items": appendages},
                 )
             except ChannelFull as e:
                 # distribute_vehicle_locations worker isn't keeping up (or is down) -

@@ -189,7 +189,7 @@ class Command(GTFSRCommand):
             redis_json["service"]["url"] = journey.service.get_absolute_url()
 
         pipeline = redis_client.pipeline(transaction=False)
-        pipeline.rpush(*location.get_appendage())
+        # pipeline.rpush(*location.get_appendage())
         pipeline.geoadd(
             "vehicle_location_locations",
             [location.latlong.x, location.latlong.y, journey.id],
