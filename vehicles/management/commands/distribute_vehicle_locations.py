@@ -38,7 +38,9 @@ class PolylineWrapper:
         self.last_time = time
 
     def set_polyline(self, polyline):
-        self.poyline = polyline
+        if isinstance(polyline, bytes):
+            polyline = polyline.decode()
+        self.polyline = polyline
         if decoded := decode_time_aware_polyline(polyline):
             self.last_lat, self.last_lng, self.last_time = decoded[-1]
 
