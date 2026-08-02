@@ -13,6 +13,11 @@ from google.transit import gtfs_realtime_pb2
 
 from busstops.models import DataSource, Operator, Region, Service, StopCode, StopPoint
 from vehicles.management.commands import import_gtfsr_ember, import_gtfsr_flixbus
+from vehicles.management.tests.test_bod_avl import (
+    CapturingChannelLayer,
+    distribute,
+    patch_redis_client,
+)
 from vehicles.models import Vehicle, VehicleJourney
 
 from ...models import Route, Trip
@@ -137,10 +142,18 @@ class FlixbusTest(TestCase):
         command = import_gtfsr_flixbus.Command()
         command.do_source()
 
-        redis = fakeredis.FakeStrictRedis()
+        server = fakeredis.FakeServer()
+        async_redis_client = fakeredis.FakeAsyncRedis(server=server, version=7)
+        redis_client = fakeredis.FakeStrictRedis(server=server, version=7)
+        channel_layer = CapturingChannelLayer()
+
         with (
             time_machine.travel("2024-04-01 14:04:48+00:00"),
-            patch("vehicles.management.import_live_vehicles.redis_client", redis),
+            patch_redis_client(redis_client),
+            patch(
+                "vehicles.management.commands.import_gtfsr_flixbus.get_channel_layer",
+                return_value=channel_layer,
+            ),
             vcr.use_cassette(str(FIXTURES_DIR / "flixbus_gtfsr.yml")),
         ):
             with self.assertNumQueries(25):
@@ -151,6 +164,8 @@ class FlixbusTest(TestCase):
             # journeys are tracked with no Vehicle records - we're not sure if
             # the vehicle id maps to a bus or a driver's mobile phone or what
             self.assertFalse(Vehicle.objects.exists())
+
+            distribute(channel_layer, async_redis_client)
 
             journeys = VehicleJourney.objects.filter(source=command.source)
             self.assertEqual(
@@ -165,9 +180,18 @@ class FlixbusTest(TestCase):
             self.assertFalse(journeys.exclude(vehicle=None).exists())
 
             # one location in each journey's history:
-            self.assertEqual(redis.llen(journeys[0].get_redis_key()), 1)
+            for journey, polyline in zip(
+                journeys,
+                (
+                    b"t|[abhyH_b~i`eB",
+                    b"r{[iihyH_o~i`eB",
+                    b"l|~EigdbI{m~i`eB",
+                    b"|shDsdx}H}l~i`eB",
+                ),
+            ):
+                self.assertEqual(redis_client.get(journey.get_redis_key()), polyline)
 
-            with patch("vehicles.views.redis_client", redis):
+            with patch("vehicles.views.redis_client", redis_client):
                 response = self.client.get("/vehicles.json")
             items = response.json()
             self.assertEqual(
@@ -190,9 +214,14 @@ class FlixbusTest(TestCase):
             with self.assertNumQueries(0):
                 command.handle_item(entity, command.source.datetime)
 
-            item = json.loads(redis.get(f"vehicle{journeys[0].id}"))
+            distribute(channel_layer, async_redis_client)
+
+            item = json.loads(redis_client.get(f"vehicle{journeys[0].id}"))
             self.assertEqual(round(item["heading"]), 33)
-            self.assertEqual(redis.llen(journeys[0].get_redis_key()), 2)
+            self.assertEqual(
+                redis_client.get(journeys[0].get_redis_key()),
+                b"t|[abhyH_b~i`eBuq@}n@{O",
+            )
 
     @time_machine.travel("2024-09-16")
     def test_import_gtfs_ember(self):
