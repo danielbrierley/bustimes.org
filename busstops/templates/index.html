@@ -42,7 +42,7 @@
     <div class="pane">
         <h2>Map</h2>
 
-        <p><a href="/map" class="button">Track buses and find bus stops nearby</a></p>
+        <p><a href="/map" id="geolocate-map-link" class="button">Track buses and find bus stops nearby</a></p>
     </div>
 </div>
 
@@ -97,3 +97,25 @@
 </ul>
 
 {% endblock content %}
+
+{% block foot %}
+<script>
+(function () {
+    var link = document.getElementById("geolocate-map-link");
+    if (!link || !navigator.geolocation) {
+        return;
+    }
+    link.addEventListener("click", function (event) {
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+            return;  // let the browser handle it as normal, eg open in a new tab
+        }
+        event.preventDefault();
+        navigator.geolocation.getCurrentPosition(function (position) {
+            window.location = "/map#" + position.coords.latitude + "/" + position.coords.longitude;
+        }, function () {
+            window.location = link.href;  // geolocation failed or was denied
+        });
+    });
+})();
+</script>
+{% endblock foot %}
