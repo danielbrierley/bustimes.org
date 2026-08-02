@@ -291,7 +291,9 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
                         {
                             "id": timestamp,
                             "coordinates": [x, y],
-                            "datetime": datetime.fromtimestamp(timestamp, UTC),
+                            "datetime": timezone.localtime(
+                                datetime.fromtimestamp(timestamp, UTC), timezone=tzinfo
+                            ),
                         }
                         for x, y, timestamp in decode_time_aware_polyline(polyline)
                     ]
