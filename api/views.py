@@ -1,5 +1,6 @@
 import logging
 from datetime import UTC, datetime, timedelta
+from math import atan2, cos, degrees, radians, sin
 
 import numpy as np
 from django.contrib.postgres.aggregates import ArrayAgg
@@ -35,6 +36,16 @@ from vehicles.views import get_vehicle_locations
 from . import filters, serializers
 
 logger = logging.getLogger(__name__)
+
+
+def calculate_bearing(a, b):
+    """Bearing in degrees from point a to point b, each [longitude, latitude]"""
+    lng1, lat1 = radians(a[0]), radians(a[1])
+    lng2, lat2 = radians(b[0]), radians(b[1])
+    delta_lng = lng2 - lng1
+    y = sin(delta_lng) * cos(lat2)
+    x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(delta_lng)
+    return (degrees(atan2(y, x)) + 360) % 360
 
 
 class BadException(APIException):
@@ -280,12 +291,22 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
                         {
                             "id": timestamp,
                             "coordinates": [x, y],
-                            # "delta":
-                            # "direction":
                             "datetime": datetime.fromtimestamp(timestamp, UTC),
                         }
                         for x, y, timestamp in decode_time_aware_polyline(polyline)
                     ]
+                    for i, location in enumerate(locations):
+                        previous = (
+                            locations[i - 1]["coordinates"]
+                            if i > 0
+                            else location["coordinates"]
+                        )
+                        following = (
+                            locations[i + 1]["coordinates"]
+                            if i + 1 < len(locations)
+                            else location["coordinates"]
+                        )
+                        location["direction"] = calculate_bearing(previous, following)
             except ResponseError:
                 # old 'list' type
                 raw_locations = redis_client.lrange(instance.get_redis_key(), 0, -1)
