@@ -804,9 +804,8 @@ class VehicleLocation:
             "coordinates": location[1:3],
             "delta": (location[5] or None) and location[6],
             "direction": (location[3] or None) and location[4],
-            "datetime": timezone.localtime(
-                datetime.datetime.fromtimestamp(location[0], datetime.UTC),
-                timezone=tz,
+            "datetime": datetime.datetime.fromtimestamp(
+                location[0], tz or timezone.get_current_timezone()
             ),
         }
 

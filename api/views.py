@@ -1,5 +1,5 @@
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from math import atan2, cos, degrees, radians, sin
 
 import numpy as np
@@ -291,8 +291,8 @@ class VehicleJourneyViewSet(viewsets.ReadOnlyModelViewSet):
                         {
                             "id": timestamp,
                             "coordinates": [x, y],
-                            "datetime": timezone.localtime(
-                                datetime.fromtimestamp(timestamp, UTC), timezone=tzinfo
+                            "datetime": datetime.fromtimestamp(
+                                timestamp, tzinfo or timezone.get_current_timezone()
                             ),
                         }
                         for x, y, timestamp in decode_time_aware_polyline(polyline)
