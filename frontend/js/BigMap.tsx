@@ -830,7 +830,7 @@ export default function BigMap(
         document.title = `${trip.service?.line_name} \u2013 ${trip.operator?.name} \u2013 bustimes.org`;
       } else {
         setJourney(undefined);
-        fetchJson(`api/trips/${props.tripId}/`).then(setTrip);
+        fetchJson(`api/trips/${props.tripId}.json`).then(setTrip);
       }
     } else if (props.noc) {
       setJourney(undefined);
@@ -848,7 +848,7 @@ export default function BigMap(
         }
       } else {
         setTrip(undefined);
-        fetchJson(`api/vehiclejourneys/${props.journeyId}/details/`).then(
+        fetchJson(`api/vehiclejourneys/${props.journeyId}/details.json`).then(
           (journey: VehicleJourney) => {
             setJourney(journey);
             const item = journey.vehicle?.id
