@@ -1168,7 +1168,10 @@ def overland(request, uuid=None):
     for item in data["locations"][-1:]:
         when = item["properties"]["timestamp"]
         device_id = item["properties"]["device_id"]
-        operator, vehicle, line_name, journey_ref = device_id.split(":")
+        try:
+            operator, vehicle, line_name, journey_ref = device_id.split(":", 3)
+        except ValueError:
+            operator = vehicle = line_name = journey_ref = ""
         lon, lat = item["geometry"]["coordinates"]
         activity = {
             "RecordedAtTime": when,
