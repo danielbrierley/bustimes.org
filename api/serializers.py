@@ -1,3 +1,4 @@
+import sentry_sdk
 from rest_framework import serializers
 
 from busstops.models import Operator, Service, StopPoint
@@ -219,49 +220,52 @@ class TripSerializer(serializers.ModelSerializer):
             route_links = {}
         previous_stop_id = None
 
-        for stop_time in obj.stops:
-            route_link = route_links.get((previous_stop_id, stop_time.stop_id))
-            if stop := stop_time.stop:
-                name = stop.get_qualified_name()
-                bearing = stop.get_heading()
-                location = stop.latlong and stop.latlong.coords
-                icon = stop.get_icon()
-            else:
-                name = stop_time.stop_code
-                bearing = None
-                location = None
-                icon = None
-            if hasattr(stop_time, "note_codes"):
-                notes = stop_time.note_codes
-            else:
-                notes = None
-            time = {
-                "id": stop_time.id,
-                "stop": {
-                    "atco_code": stop_time.stop_id,
-                    "name": name,
-                    "location": location,
-                    "bearing": bearing,
-                    "icon": icon,
-                },
-                "aimed_arrival_time": stop_time.arrival_time(),
-                "aimed_departure_time": stop_time.departure_time(),
-                "timing_status": stop_time.timing_status(),
-                "pick_up": stop_time.pick_up,
-                "set_down": stop_time.set_down,
-                "expected_arrival_time": getattr(stop_time, "expected_arrival", None),
-                "expected_departure_time": getattr(
-                    stop_time, "expected_departure", None
-                ),
-                "actual_departure_time": getattr(
-                    stop_time, "actual_departure_time", None
-                ),
-                # "call_condition": stop_time.call_condition,
-                "note_codes": notes,
-            }
-            time["track"] = route_link and route_link.geometry.coords
-            yield time
-            previous_stop_id = stop_time.stop_id
+        with sentry_sdk.start_span(name="list stop times"):
+            for stop_time in obj.stops:
+                if stop := stop_time.stop:
+                    name = stop.get_qualified_name()
+                    bearing = stop.get_heading()
+                    location = stop.latlong and stop.latlong.coords
+                    icon = stop.get_icon()
+                else:
+                    name = stop_time.stop_code
+                    bearing = None
+                    location = None
+                    icon = None
+                if hasattr(stop_time, "note_codes"):
+                    notes = stop_time.note_codes
+                else:
+                    notes = None
+                time = {
+                    "id": stop_time.id,
+                    "stop": {
+                        "atco_code": stop_time.stop_id,
+                        "name": name,
+                        "location": location,
+                        "bearing": bearing,
+                        "icon": icon,
+                    },
+                    "aimed_arrival_time": stop_time.arrival_time(),
+                    "aimed_departure_time": stop_time.departure_time(),
+                    "timing_status": stop_time.timing_status(),
+                    "pick_up": stop_time.pick_up,
+                    "set_down": stop_time.set_down,
+                    "expected_arrival_time": getattr(
+                        stop_time, "expected_arrival", None
+                    ),
+                    "expected_departure_time": getattr(
+                        stop_time, "expected_departure", None
+                    ),
+                    "actual_departure_time": getattr(
+                        stop_time, "actual_departure_time", None
+                    ),
+                    # "call_condition": stop_time.call_condition,
+                    "note_codes": notes,
+                }
+                if route_link := route_links.get((previous_stop_id, stop_time.stop_id)):
+                    time["track"] = route_link.geometry.coords
+                yield time
+                previous_stop_id = stop_time.stop_id
 
     class Meta:
         model = Trip
