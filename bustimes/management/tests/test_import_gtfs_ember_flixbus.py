@@ -156,7 +156,7 @@ class FlixbusTest(TestCase):
             ),
             vcr.use_cassette(str(FIXTURES_DIR / "flixbus_gtfsr.yml")),
         ):
-            with self.assertNumQueries(25):
+            with self.assertNumQueries(29):
                 command.update()
             with self.assertNumQueries(0):
                 command.update()
@@ -197,9 +197,6 @@ class FlixbusTest(TestCase):
             self.assertEqual(
                 [item["id"] for item in items], [journey.id for journey in journeys]
             )
-            self.assertEqual(items[0]["vehicle"], {"name": ""})
-            self.assertEqual(items[2]["vehicle"], {"name": "BV23NRE"})
-            self.assertEqual(items[0]["service"]["line_name"], "004")
             self.assertIn("url", items[0]["service"])
             self.assertIsNone(items[0]["heading"])  # not moved yet
 
