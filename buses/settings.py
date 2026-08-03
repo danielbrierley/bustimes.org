@@ -286,11 +286,12 @@ FORMS_URLFIELD_ASSUME_HTTPS = True
 
 def traces_sampler(context):
     try:
-        url = context["wsgi_environ"]["RAW_URI"]
+        environ = context["wsgi_environ"]
+        if "QUERY_STRING" in environ and "__profile__" in environ["QUERY_STRING"]:
+            return 1
+        url = environ["PATH_INFO"]
     except KeyError:
         return 0
-    if "__profile__" in url:
-        return 1
     if url == "/version" or url.startswith(
         ("/vehicles.json", "/stops.json", "/static/", "/journeys/")
     ):
