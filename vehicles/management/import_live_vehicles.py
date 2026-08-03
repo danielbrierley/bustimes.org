@@ -231,8 +231,10 @@ class ImportLiveVehiclesCommand(BaseCommand):
         if keep_journey:
             pass
         else:
-            if latest_journey and same_journey(
-                journey, latest_journey, location.datetime
+            if (
+                latest_journey
+                and latest_journey.id
+                and same_journey(journey, latest_journey, location.datetime)
             ):
                 journey.uuid = latest_journey.uuid
                 journey.id = latest_journey.id
