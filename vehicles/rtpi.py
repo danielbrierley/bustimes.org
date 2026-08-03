@@ -132,7 +132,7 @@ def get_progress(
             rl.distance = rl.distance.m  # convert to meters
             route_links[(rl.from_stop_id, rl.to_stop_id)] = rl
 
-    with sentry_sdk.start_span("nearby pairs"):
+    with sentry_sdk.start_span(name="nearby pairs"):
         nearby_pairs = []
         for a, b in pairwise(stop_times):
             key = (a.stop_id, b.stop_id)
@@ -155,7 +155,7 @@ def get_progress(
 
         nearby_pairs.sort(key=lambda p: p[2].distance)
 
-    with sentry_sdk.start_span("closest pairs"):
+    with sentry_sdk.start_span(name="closest pairs"):
         closest = nearby_pairs[0]
         next_closest = nearby_pairs[1] if len(nearby_pairs) > 1 else None
 
@@ -178,7 +178,7 @@ def get_progress(
                     closest = next_closest
                     distance = next_closest[2].distance
 
-    with sentry_sdk.start_span("delay"):
+    with sentry_sdk.start_span(name="delay"):
         progress = Progress(
             stop_times, closest[0], closest[1], closest[2].progress, closest[2].distance
         )
