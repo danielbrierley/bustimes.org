@@ -198,8 +198,10 @@ class Command(GTFSRCommand):
                 location.heading = calculate_bearing(latest_latlong, location.latlong)
 
         redis_json = location.get_redis_json(tz=self.tzinfo)
-        redis_json["vehicle"] = {"name": item.vehicle.vehicle.license_plate}
-        if self.livery:
+        if self.livery and not journey.vehicle_id:
+            redis_json["vehicle"] = {
+                "name": item.vehicle.vehicle.license_plate or "FlixBus"
+            }
             redis_json["vehicle"]["livery"] = self.livery.id
             redis_json["vehicle"]["colour"] = self.livery.colour
         if journey.service_id and "service" in redis_json:
