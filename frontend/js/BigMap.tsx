@@ -1113,6 +1113,10 @@ export default function BigMap(
 
           {/* props.mode === MapMode.Slippy ? <SlippyMapHash /> : null */}
 
+          {props.mode === MapMode.Journey && journey?.trip?.times ? (
+            <Route times={journey.trip.times} />
+          ) : null}
+
           {props.mode === MapMode.Slippy ? (
             <Stops
               clickedStopFeature={clickedStopFeature}
@@ -1137,10 +1141,6 @@ export default function BigMap(
 
           {props.mode === MapMode.Journey && journeyLocations.length ? (
             <Locations locations={journeyLocations} />
-          ) : null}
-
-          {props.mode === MapMode.Journey && journey?.trip?.times ? (
-            <Route times={journey.trip.times} />
           ) : null}
 
           {vehicles && showBuses ? (

@@ -210,9 +210,7 @@ class TripSerializer(serializers.ModelSerializer):
         if not hasattr(obj, "stops"):
             return
 
-        include_track = self.context.get("include_track", True)
-
-        if include_track and obj.route and obj.route.service:
+        if obj.route and obj.route.service:
             route_links = {
                 (link.from_stop_id, link.to_stop_id): link
                 for link in obj.route.service.routelink_set.all()
@@ -261,8 +259,7 @@ class TripSerializer(serializers.ModelSerializer):
                 # "call_condition": stop_time.call_condition,
                 "note_codes": notes,
             }
-            if include_track:
-                time["track"] = route_link and route_link.geometry.coords
+            time["track"] = route_link and route_link.geometry.coords
             yield time
             previous_stop_id = stop_time.stop_id
 
