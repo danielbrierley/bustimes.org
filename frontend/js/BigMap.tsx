@@ -417,6 +417,14 @@ function JourneySidebar(props: {
 
   const journey = props.journey;
 
+  if (!journey) {
+    return (
+      <div className={className}>
+        <LoadingSorry />
+      </div>
+    );
+  }
+
   const showNavigation = journey.previous || journey.next;
 
   const _operator = journey.operator || journey.trip?.operator;
@@ -1190,7 +1198,7 @@ export default function BigMap(
         />
       ) : null}
 
-      {props.mode === MapMode.Journey && journey ? (
+      {props.mode === MapMode.Journey ? (
         <JourneySidebar
           journey={journey}
           journeyId={props.journeyId}
