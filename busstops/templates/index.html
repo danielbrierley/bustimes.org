@@ -111,7 +111,7 @@
         }
         event.preventDefault();
         navigator.geolocation.getCurrentPosition(function (position) {
-            window.location = "/map#" + position.coords.latitude + "/" + position.coords.longitude;
+            window.location = "/map#13/" + position.coords.latitude + "/" + position.coords.longitude;
         }, function () {
             window.location = link.href;  // geolocation failed or was denied
         });
