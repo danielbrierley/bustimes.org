@@ -89,6 +89,7 @@ class StopAreaAdmin(GISModelAdmin):
 
 class OperatorCodeInline(admin.TabularInline):
     model = models.OperatorCode
+    raw_id_fields = ("source",)
 
 
 class OperatorAdminForm(ModelForm):
