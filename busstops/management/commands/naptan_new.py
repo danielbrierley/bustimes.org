@@ -101,7 +101,7 @@ def get_stop(element, atco_code):
     )
 
     for xml_path, key in mapping:
-        value = element.findtext(xml_path, "").strip()
+        value = element.findtext(xml_path, "").strip().replace("`", "'")
         if value in nothings:
             value = ""
         setattr(stop, key, value)
@@ -119,7 +119,7 @@ def get_stop_area(element):
 
     return StopArea(
         id=stop_area_code,
-        name=element.findtext("Name"),
+        name=element.findtext("Name", "").strip().replace("`", "'"),
         latlong=point,
         active=element.attrib.get("Status", "active") == "active",
         admin_area_id=element.findtext("AdministrativeAreaRef"),
