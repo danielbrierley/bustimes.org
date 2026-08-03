@@ -179,7 +179,9 @@ class Command(GTFSRCommand):
 
         redis_client = import_live_vehicles.redis_client
 
-        latest = redis_client.get(f"vehicle{journey.id}")
+        vehicle_or_journey_id = journey.vehicle_id or journey.id
+
+        latest = redis_client.get(f"vehicle{vehicle_or_journey_id}")
         if latest:
             latest = json.loads(latest)
             if datetime.fromisoformat(latest["datetime"]) >= updated_at:
@@ -188,7 +190,7 @@ class Command(GTFSRCommand):
         location = self.create_vehicle_location(item)
         location.datetime = updated_at
         location.journey = journey
-        location.id = journey.id  # (in lieu of a vehicle id)
+        location.id = vehicle_or_journey_id
 
         if latest and location.heading is None:
             latest_latlong = Point(*latest["coordinates"])
@@ -200,22 +202,22 @@ class Command(GTFSRCommand):
         redis_json = location.get_redis_json(tz=self.tzinfo)
         if self.livery and not journey.vehicle_id:
             redis_json["vehicle"] = {
-                "name": item.vehicle.vehicle.license_plate or "FlixBus"
+                "name": item.vehicle.vehicle.license_plate or "FlixBus",
+                "livery": self.livery.id,
+                "colour": self.livery.colour,
             }
-            redis_json["vehicle"]["livery"] = self.livery.id
-            redis_json["vehicle"]["colour"] = self.livery.colour
         if journey.service_id and "service" in redis_json:
             redis_json["service"]["url"] = journey.service.get_absolute_url()
 
         pipeline = redis_client.pipeline(transaction=False)
         pipeline.geoadd(
             "vehicle_location_locations",
-            [location.latlong.x, location.latlong.y, journey.id],
+            [location.latlong.x, location.latlong.y, location.id],
         )
         if journey.service_id:
-            pipeline.sadd(f"service{journey.service_id}vehicles", journey.id)
-        pipeline.sadd("operatorFLIXvehicles", journey.id)
-        pipeline.set(f"vehicle{journey.id}", json.dumps(redis_json), ex=900)
+            pipeline.sadd(f"service{journey.service_id}vehicles", location.id)
+        pipeline.sadd("operatorFLIXvehicles", location.id)
+        pipeline.set(f"vehicle{location.id}", json.dumps(redis_json), ex=900)
         pipeline.execute()
 
         channel_layer = get_channel_layer()
