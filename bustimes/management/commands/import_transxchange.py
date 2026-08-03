@@ -35,7 +35,7 @@ from busstops.models import (
     StopPoint,
     StopUsage,
 )
-from busstops.utils import get_datetime
+from busstops.utils import get_coord_transform, get_datetime
 from vehicles.models import get_text_colour
 from vosa.models import Registration
 
@@ -240,11 +240,11 @@ def get_route_links(journeys, transxchange: TransXChange):
 
 def route_link_is_dodgy(point: Point, stop: StopPoint, context: str) -> bool:
     if point.srid and point.srid != 4326:
-        point.transform(4326)
+        point.transform(get_coord_transform(point.srid))
 
     if stop.latlong:
         if stop.latlong.srid and stop.latlong.srid != 4326:
-            stop.latlong.transform(4326)
+            stop.latlong.transform(get_coord_transform(stop.latlong.srid))
         distance = stop.latlong.distance(point)
         if distance > 0.02:
             # stop location roughly more than 1 km from start/end of RouteLink

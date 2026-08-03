@@ -6,6 +6,7 @@ from itertools import pairwise
 
 import sentry_sdk
 from django.contrib.gis.db.models.functions import Distance, LineLocatePoint
+from django.contrib.gis.gdal import CoordTransform, SpatialReference
 from django.contrib.gis.geos import LineString, Point
 
 from bustimes.models import RouteLink, StopTime, Trip
@@ -13,6 +14,8 @@ from bustimes.utils import contiguous_stoptimes_only
 from vehicles.utils import calculate_bearing
 
 logger = logging.getLogger(__name__)
+
+WGS84_TO_WEB_MERCATOR = CoordTransform(SpatialReference(4326), SpatialReference(3857))
 
 
 def get_route_bearing(geometry: LineString, progress: float):
@@ -97,7 +100,7 @@ def get_progress(
     date = datetime.date.fromisoformat(item["date"])
 
     point = Point(*item["coordinates"], srid=4326)
-    point_3857 = point.transform(3857, clone=True)
+    point_3857 = point.transform(WGS84_TO_WEB_MERCATOR, clone=True)
 
     if stop_times is not None:
         stop_times = [st for st in stop_times if st.stop_id and st.stop.latlong]
@@ -142,7 +145,7 @@ def get_progress(
                     nearby_pairs.append((a, b, rl))
             else:
                 geometry = LineString([a.stop.latlong, b.stop.latlong], srid=4326)
-                geometry_3857 = geometry.transform(3857, clone=True)
+                geometry_3857 = geometry.transform(WGS84_TO_WEB_MERCATOR, clone=True)
                 distance = geometry_3857.distance(point_3857)  # in meters
                 if distance < 1000:  # within ~1km
                     rl = RouteLink(from_stop=a.stop, to_stop=b.stop, geometry=geometry)
