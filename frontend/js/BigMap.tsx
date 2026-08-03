@@ -407,7 +407,7 @@ function TripSidebar(props: {
 }
 
 function JourneySidebar(props: {
-  journey: VehicleJourney;
+  journey?: VehicleJourney;
   journeyId: string;
   highlightedStop?: string;
   vehicle?: VehicleLocation | null;

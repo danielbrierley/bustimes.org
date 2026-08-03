@@ -34,3 +34,12 @@ repos:
         files: frontend
         exclude: ^frontend/js/(maps|bigmap-classic).js$
         args: ['--unsafe']
+
+  - repo: local
+    hooks:
+      - id: tsc
+        name: tsc
+        entry: npm run lint
+        language: system
+        files: \.tsx?$
+        pass_filenames: false
