@@ -185,8 +185,7 @@ class Consequence(models.Model):
         return self.text
 
     def get_absolute_url(self):
-        service = self.services.first()
-        if service:
+        if service := self.services.first():
             return service.get_absolute_url()
         return ""
 

@@ -48,3 +48,8 @@ class Photo(models.Model):
 
     def __str__(self):
         return self.caption
+
+    def get_absolute_url(self):
+        if vehicle := self.vehicles.first():
+            return vehicle.get_absolute_url()
+        return ""
