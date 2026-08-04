@@ -1,10 +1,9 @@
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.core.cache import cache
 from django.db.models import Q
 from google.protobuf import json_format
-from google.transit import gtfs_realtime_pb2
 
 from busstops.models import DataSource
 from bustimes.models import Trip
@@ -25,11 +24,9 @@ class Command(GTFSRCommand):
         return self
 
     def get_items(self):
-        response = self.session.get(self.url, timeout=10)
-        response.raise_for_status()
-
-        feed = gtfs_realtime_pb2.FeedMessage()
-        feed.ParseFromString(response.content)
+        feed = self.get_feed()
+        if feed is None:  # not modified
+            return
 
         trip_updates = {
             entity["tripUpdate"]["trip"]["tripId"]: entity["tripUpdate"]
@@ -37,8 +34,6 @@ class Command(GTFSRCommand):
             if "tripUpdate" in entity and "tripId" in entity["tripUpdate"]["trip"]
         }
         cache.set("ember_trip_updates", trip_updates, 300)
-
-        self.source.datetime = datetime.fromtimestamp(feed.header.timestamp, UTC)
 
         # the feed contains both vehicle positions and alerts (and possibly other entities)
         for item in feed.entity:
