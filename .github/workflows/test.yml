@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   test-frontend:
     runs-on: ubuntu-24.04
@@ -58,20 +62,22 @@ jobs:
         persist-credentials: false
 
     - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      with:
+        prune-cache: true
 
-    - run: uv sync --group test --frozen && mkdir staticfiles
+    - run: uv sync --group test --frozen --no-install-package psycopg-c && mkdir staticfiles
 
     - name: run tests
       env:
         DATABASE_URL: postgis://postgres:postgres@postgres/postgres
         SECRET_KEY: secret
-      run: uv run coverage run --parallel-mode --concurrency=multiprocessing ./manage.py test --parallel=2 --keepdb --durations 10
+      run: uv run --no-sync coverage run --parallel-mode --concurrency=multiprocessing ./manage.py test --parallel=2 --keepdb --durations 10
 
     - name: generate coverage HTML report
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
-        uv run coverage combine
-        uv run coverage html
+        uv run --no-sync coverage combine
+        uv run --no-sync coverage html
 
     - name: upload coverage HTML artifact
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
