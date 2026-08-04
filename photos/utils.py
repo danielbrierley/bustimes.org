@@ -31,7 +31,7 @@ def add_flickr_photo(url, vehicle, request):
     response.raise_for_status()
     info = response.json()
     photo.url = info["photo"]["urls"]["url"][0]["_content"]
-    if photo["owner"]["path_alias"] != "goodwinjoshua":
+    if info["photo"]["owner"]["path_alias"] != "goodwinjoshua":
         photo.credit = (
             info["photo"]["owner"]["realname"] or info["photo"]["owner"]["username"]
         )

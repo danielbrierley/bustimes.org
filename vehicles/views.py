@@ -35,6 +35,7 @@ from django.views.decorators.http import require_POST, require_safe
 from django.views.generic.detail import DetailView
 from haversine import haversine
 from redis.exceptions import ConnectionError
+from requests import HTTPError
 from sql_util.utils import Exists, SubqueryMax, SubqueryMin
 
 from accounts.models import User
@@ -746,6 +747,7 @@ class VehicleDetailView(DetailView):
     queryset = model.objects.select_related(
         "operator", "operator__region", "vehicle_type", "livery", "latest_journey"
     ).prefetch_related("features", "photo_set")
+    form = None
 
     def get_object(self, **kwargs):
         try:
@@ -803,7 +805,7 @@ class VehicleDetailView(DetailView):
             context["next"] = self.object.get_next()
 
         if self.request.user.has_perm("photos.add_photo"):
-            context["form"] = PhotoForm()
+            context["form"] = self.form or PhotoForm()
 
         return context
 
@@ -829,7 +831,12 @@ class VehicleDetailView(DetailView):
             try:
                 add_flickr_photo(form.cleaned_data["url"], vehicle, self.request)
             except IndexError:
-                pass
+                form.add_error("url", "That doesn't look like a Flickr photo URL")
+            except HTTPError:
+                form.add_error("url", "Couldn't get the photo from Flickr")
+
+        if form.errors:
+            self.form = form
 
         return self.get(*args, **kwargs)
 
