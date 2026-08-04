@@ -8,7 +8,7 @@ from django.core.management.base import BaseCommand
 from django.db.models.functions import Now
 
 from busstops.models import AdminArea, DataSource, Locality, StopArea, StopPoint
-from busstops.utils import get_datetime
+from busstops.utils import get_coord_transform, get_datetime
 from bustimes.download_utils import download_if_modified
 
 logger = logging.getLogger(__name__)
@@ -165,7 +165,9 @@ class Command(BaseCommand):
                     if key == "latlong":
                         if stop.latlong:
                             if stop.latlong.srid and stop.latlong.srid != 4326:
-                                stop.latlong.transform(4326)
+                                stop.latlong.transform(
+                                    get_coord_transform(stop.latlong.srid)
+                                )
                             if (
                                 existing.latlong
                                 and stop.latlong.distance(existing.latlong) < 0.00005
