@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "email_obfuscator",
     "api",
     "photos",
+    "imagekit",
     "rest_framework",
     "django_filters",
     "simple_history",
