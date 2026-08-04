@@ -21,11 +21,11 @@ from vehicles.management.tests.test_bod_avl import (
 from vehicles.models import Vehicle, VehicleJourney
 
 from ...models import Route, Trip
-from .test_import_gtfs import make_zipfile
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 
 
+# test data in `ember_gtfs.zip` and `flixus_eu.zip` dirs (not real zipfiles) in fixtures dir
 @override_settings(DATA_DIR=FIXTURES_DIR)
 class FlixbusTest(TestCase):
     @classmethod
@@ -230,14 +230,11 @@ class FlixbusTest(TestCase):
                     datetime.datetime(2024, 6, 18, 10, 0, 0, tzinfo=datetime.UTC),
                 ),
             ),
-            TemporaryDirectory() as directory,
-            override_settings(DATA_DIR=directory),
+            TemporaryDirectory(),
+            vcr.use_cassette(str(FIXTURES_DIR / "ember_gtfsr.yml")),
         ):
-            make_zipfile(directory, "ember_gtfs")
-
-            with vcr.use_cassette(str(FIXTURES_DIR / "ember_gtfsr.yml")):
-                call_command("import_gtfs_ember")
-                call_command("import_gtfs_ember")
+            call_command("import_gtfs_ember")
+            call_command("import_gtfs_ember")
 
         response = self.client.get("/operators/ember")
 
