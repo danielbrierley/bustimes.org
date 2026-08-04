@@ -31,9 +31,10 @@ def add_flickr_photo(url, vehicle, request):
     response.raise_for_status()
     info = response.json()
     photo.url = info["photo"]["urls"]["url"][0]["_content"]
-    photo.credit = (
-        info["photo"]["owner"]["realname"] or info["photo"]["owner"]["username"]
-    )
+    if photo["owner"]["path_alias"] != "goodwinjoshua":
+        photo.credit = (
+            info["photo"]["owner"]["realname"] or info["photo"]["owner"]["username"]
+        )
     photo.caption = info["photo"]["title"]["_content"]
     response = session.get(
         "https://api.flickr.com/services/rest",
