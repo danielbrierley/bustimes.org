@@ -135,6 +135,10 @@ LOGIN_REDIRECT_URL = "/vehicles"
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 100,
+    "DEFAULT_RENDERER_CLASSES": [
+        "django_orjson.rest_framework.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

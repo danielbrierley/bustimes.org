@@ -219,6 +219,7 @@ class TripSerializer(serializers.ModelSerializer):
         else:
             route_links = {}
         previous_stop_id = None
+        times = []
 
         with sentry_sdk.start_span(name="list stop times"):
             for stop_time in obj.stops:
@@ -264,8 +265,10 @@ class TripSerializer(serializers.ModelSerializer):
                 }
                 if route_link := route_links.get((previous_stop_id, stop_time.stop_id)):
                     time["track"] = route_link.geometry.coords
-                yield time
+                times.append(time)
                 previous_stop_id = stop_time.stop_id
+
+        return times
 
     class Meta:
         model = Trip

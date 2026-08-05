@@ -51,7 +51,7 @@ dependencies = [
     "channels[daphne]>=4.3.2",
     "channels-redis>=4.3.0",
     "granian[uvloop]>=2.7.9",
-    "django-orjson>=1.1.0",
+    "django-orjson[drf]>=1.1.0",
 ]
 
 [dependency-groups]

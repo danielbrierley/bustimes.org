@@ -191,7 +191,7 @@ dependencies = [
     { name = "django-http-compression" },
     { name = "django-imagekit" },
     { name = "django-multidb-router" },
-    { name = "django-orjson" },
+    { name = "django-orjson", extra = ["drf"] },
     { name = "django-simple-history" },
     { name = "django-sql-utils" },
     { name = "django-storages" },
@@ -265,7 +265,7 @@ requires-dist = [
     { name = "django-http-compression", specifier = ">=1.2.0" },
     { name = "django-imagekit", specifier = ">=6.1.0" },
     { name = "django-multidb-router", specifier = ">=0.10" },
-    { name = "django-orjson", specifier = ">=1.1.0" },
+    { name = "django-orjson", extras = ["drf"], specifier = ">=1.1.0" },
     { name = "django-simple-history", specifier = ">=3.0.0,<4" },
     { name = "django-sql-utils", specifier = ">=0.7.0,<0.8" },
     { name = "django-storages", specifier = ">=1.14.6" },
@@ -847,6 +847,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5a/c7/4cc080f5be2ca8d96f1433905cd1c90fc9fcd25110326d8fd0a20a2c1f0a/django_orjson-1.1.0.tar.gz", hash = "sha256:df528c5091d28a0db3922de0989b6f19201e0c003185fb272d74b763bc0370d3", size = 8349, upload-time = "2026-07-01T21:12:53.281Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b2/53/3a9f3b2d1d18cee7cd3beefc427e5bcfff0fa58f02d8e06353aae8ec26e7/django_orjson-1.1.0-py3-none-any.whl", hash = "sha256:5cc256c4ec6371534f02ffadcfed4de3554f5e0ac11f719b1a1af555d9339cee", size = 10029, upload-time = "2026-07-01T21:12:52.062Z" },
+]
+
+[package.optional-dependencies]
+drf = [
+    { name = "djangorestframework" },
 ]
 
 [[package]]
