@@ -193,7 +193,7 @@ class SiriPostTest(TestCase):
                 ),
             ):
                 self.assertEqual(200, response.status_code)
-                self.assertEqual(response.text, """{"result": "ok"}""")
+                self.assertEqual(response.text, """{"result":"ok"}""")
 
             with self.assertRaises(KeyError):
                 self.client.post("/overland", data, content_type="application/json")

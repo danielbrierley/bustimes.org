@@ -27,7 +27,6 @@ from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
-    JsonResponse,
     StreamingHttpResponse,
 )
 from django.shortcuts import get_object_or_404, redirect, render
@@ -40,6 +39,7 @@ from django.views.csrf import csrf_failure as django_csrf_failure
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import last_modified
 from django.views.generic.detail import DetailView
+from django_orjson.http import JsonResponse
 from redis.exceptions import ConnectionError
 from sql_util.utils import Exists, SubqueryMax, SubqueryMin
 from ukpostcodeutils import validation
@@ -457,11 +457,11 @@ def stops_mvt(request, z, x, y):
 
 
 def stats(request):
-    return JsonResponse(cache.get("vehicle-tracking-stats", []), safe=False)
+    return JsonResponse(cache.get("vehicle-tracking-stats", []))
 
 
 def timetable_source_stats(request):
-    return JsonResponse(cache.get("timetable-source-stats", []), safe=False)
+    return JsonResponse(cache.get("timetable-source-stats", []))
 
 
 @cache_control(max_age=3600)

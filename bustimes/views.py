@@ -24,7 +24,6 @@ from django.http import (
     Http404,
     HttpResponse,
     HttpResponseBadRequest,
-    JsonResponse,
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -32,6 +31,7 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_GET
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
+from django_orjson.http import JsonResponse
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import JsonLexer, XmlLexer

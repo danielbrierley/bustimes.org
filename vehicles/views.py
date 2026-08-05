@@ -19,7 +19,7 @@ from django.db import IntegrityError, OperationalError, connection, transaction
 from django.db.models import Case, F, Max, OuterRef, Q, Value, When
 from django.db.models.aggregates import StringAgg
 from django.db.models.functions import Coalesce, Now
-from django.http import Http404, HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -33,6 +33,7 @@ from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_safe
 from django.views.generic.detail import DetailView
+from django_orjson.http import JsonResponse
 from haversine import haversine
 from redis.exceptions import ConnectionError
 from requests import HTTPError
@@ -575,7 +576,7 @@ def vehicles_json(request) -> JsonResponse:
     except BadRequest:
         return cachable_400()
 
-    response = JsonResponse(locations, safe=False)
+    response = JsonResponse(locations)
 
     return respond_conditionally(request, response)
 
@@ -1085,7 +1086,7 @@ def latest_journey_debug(request, **kwargs):
     except (KeyError, TypeError):
         pass
 
-    return JsonResponse(vehicle.latest_journey_data, safe=False)
+    return JsonResponse(vehicle.latest_journey_data)
 
 
 class _Rollback(Exception):
