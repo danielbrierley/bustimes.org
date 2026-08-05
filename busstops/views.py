@@ -1680,7 +1680,7 @@ def search(request):
                         .distinct()
                         .annotate(distance=Distance("latlong", point))
                         .order_by("distance")
-                        .defer("latlong")[:20]
+                        .defer("latlong")[:6]
                     ),
                 }
 
