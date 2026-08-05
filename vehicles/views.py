@@ -49,7 +49,7 @@ from busstops.utils import get_bounding_box
 from bustimes.models import Garage, Route
 from bustimes.utils import get_other_trips_in_block
 from photos.forms import PhotoForm
-from photos.utils import add_flickr_photo
+from photos.utils import add_flickr_photo, add_uploaded_photo
 
 from . import filters, forms
 from .management.commands import import_bod_avl
@@ -825,15 +825,18 @@ class VehicleDetailView(DetailView):
 
     @method_decorator(permission_required("photos.add_photo", raise_exception=True))
     def post(self, *args, **kwargs):
-        form = PhotoForm(self.request.POST)
+        form = PhotoForm(self.request.POST, self.request.FILES)
         vehicle = self.get_object()
         if form.is_valid():
-            try:
-                add_flickr_photo(form.cleaned_data["url"], vehicle, self.request)
-            except IndexError:
-                form.add_error("url", "That doesn't look like a Flickr photo URL")
-            except HTTPError:
-                form.add_error("url", "Couldn't get the photo from Flickr")
+            if image := form.cleaned_data["image"]:
+                add_uploaded_photo(image, vehicle, self.request)
+            else:
+                try:
+                    add_flickr_photo(form.cleaned_data["url"], vehicle, self.request)
+                except IndexError:
+                    form.add_error("url", "That doesn't look like a Flickr photo URL")
+                except HTTPError:
+                    form.add_error("url", "Couldn't get the photo from Flickr")
 
         if form.errors:
             self.form = form

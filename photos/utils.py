@@ -1,4 +1,5 @@
 import hashlib
+from pathlib import Path
 
 import requests
 from django.conf import settings
@@ -11,6 +12,16 @@ def get_sha1(content):
     sha1 = hashlib.sha1(usedforsecurity=False)
     sha1.update(content)
     return sha1.hexdigest()
+
+
+def add_uploaded_photo(image, vehicle, request):
+    photo = Photo()
+    content = image.read()
+    suffix = Path(image.name).suffix.lower() or ".jpg"
+    photo.image.save(get_sha1(content) + suffix, ContentFile(content))
+    photo.user = request.user
+    photo.save()
+    photo.vehicles.add(vehicle)
 
 
 def add_flickr_photo(url, vehicle, request):
