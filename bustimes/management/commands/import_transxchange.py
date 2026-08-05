@@ -937,13 +937,6 @@ class Command(BaseCommand):
 
             if journey.block and journey.block.code:
                 trip.block = journey.block.code
-                if (
-                    trip.operator
-                    and trip.block[:1] == "B"
-                    and trip.block < "B99"
-                    and trip.operator.noc in ("SNDR", "OBUS", "LYNX")
-                ):
-                    trip.block = None
             elif (
                 journey.journey_pattern
                 and journey.journey_pattern.block
