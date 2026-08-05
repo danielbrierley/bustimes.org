@@ -8,6 +8,10 @@ from django.core.files.base import ContentFile
 from .models import Photo
 
 
+class WrongLicense(Exception):
+    pass
+
+
 def get_sha1(content):
     sha1 = hashlib.sha1(usedforsecurity=False)
     sha1.update(content)
@@ -36,19 +40,24 @@ def add_flickr_photo(url, vehicle, request):
         "nojsoncallback": 1,
     }
     response = session.get(
-        "https://api.flickr.com/services/rest",
+        "https://www.flickr.com/services/rest",
         params={"method": "flickr.photos.getInfo"},
     )
     response.raise_for_status()
     info = response.json()
     photo.url = info["photo"]["urls"]["url"][0]["_content"]
+
+    photo.license = info["photo"]["license"]
+    if photo.license in ("0", "1", "2", "3", "14", "15", "16"):
+        raise WrongLicense()
+
     if info["photo"]["owner"]["path_alias"] != "goodwinjoshua":
         photo.credit = (
             info["photo"]["owner"]["realname"] or info["photo"]["owner"]["username"]
         )
     photo.caption = info["photo"]["title"]["_content"]
     response = session.get(
-        "https://api.flickr.com/services/rest",
+        "https://www.flickr.com/services/rest",
         params={"method": "flickr.photos.getSizes"},
     )
     response.raise_for_status()

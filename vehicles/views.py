@@ -49,7 +49,7 @@ from busstops.utils import get_bounding_box
 from bustimes.models import Garage, Route
 from bustimes.utils import get_other_trips_in_block
 from photos.forms import PhotoForm
-from photos.utils import add_flickr_photo, add_uploaded_photo
+from photos.utils import WrongLicense, add_flickr_photo, add_uploaded_photo
 
 from . import filters, forms
 from .management.commands import import_bod_avl
@@ -835,6 +835,8 @@ class VehicleDetailView(DetailView):
                     add_flickr_photo(form.cleaned_data["url"], vehicle, self.request)
                 except IndexError:
                     form.add_error("url", "That doesn't look like a Flickr photo URL")
+                except WrongLicense:
+                    form.add_error("url", "That Flickr isn't permissively licensed")
                 except HTTPError:
                     form.add_error("url", "Couldn't get the photo from Flickr")
 
