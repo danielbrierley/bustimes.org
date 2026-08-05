@@ -32,7 +32,7 @@
 {% if vehicle %}
     {% with photos=vehicle.photo_set.all %}{% if photos %}
         <figure class="vehicle-photo">
-            {% load imagekit %}{% generateimage 'photos:photo:image_320' source=photos.0.image -- alt="" %}
+            <img src="{{ photos.0.image_320.url }}" />
             {% if photos.0.credit %}
                 <figcaption>
                     {% if photos.0.url %}
