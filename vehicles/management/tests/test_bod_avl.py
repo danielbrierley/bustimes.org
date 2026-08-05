@@ -1151,8 +1151,7 @@ class BusOpenDataVehicleLocationsTest(TestCase):
     def test_debugger_error(self):
         response = self.client.post("/vehicles/debug", {"data": "trdgserawse/"})
         self.assertIn(
-            "Expecting value: line 1 column 1 (char 0)",
-            str(response.context["form"].errors),
+            "that isn&#x27;t valid JSON", str(response.context["form"].errors)
         )
 
     def test_zipfile(self):

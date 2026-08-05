@@ -1,5 +1,4 @@
 import datetime
-import json
 import logging
 import subprocess
 from functools import partial
@@ -35,6 +34,7 @@ from django.views.decorators.http import require_POST, require_safe
 from django.views.generic.detail import DetailView
 from django_orjson.http import JsonResponse
 from haversine import haversine
+from orjson import loads
 from redis.exceptions import ConnectionError
 from requests import HTTPError
 from sql_util.utils import Exists, SubqueryMax, SubqueryMin
@@ -400,9 +400,7 @@ def get_vehicle_locations(
     vehicle_locations = redis_client.mget(
         [f"vehicle{vehicle_id}" for vehicle_id in vehicle_ids]
     )
-    vehicle_locations = [
-        json.loads(item) if item else item for item in vehicle_locations
-    ]
+    vehicle_locations = [loads(item) if item else item for item in vehicle_locations]
 
     # remove expired items from 'vehicle_location_locations'
     to_remove = [
@@ -1099,9 +1097,9 @@ def debug(request):
     if form.is_valid():
         data = form.cleaned_data["data"]
         try:
-            item = json.loads(data)
-        except ValueError as e:
-            form.add_error("data", e)
+            item = loads(data)
+        except ValueError:
+            form.add_error("data", "that isn't valid JSON")
         else:
             vehicle = None
             journey = None
@@ -1176,7 +1174,7 @@ def overland(request, uuid=None):
 
     subscription = get_object_or_404(SiriSubscription, uuid=uuid)
 
-    data = json.loads(request.body)
+    data = loads(request.body)
 
     for item in data["locations"][-1:]:
         when = item["properties"]["timestamp"]
