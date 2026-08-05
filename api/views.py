@@ -152,16 +152,18 @@ class TripViewSet(viewsets.ReadOnlyModelViewSet):
     def get_stops(obj):
         trips = obj.get_trips()
         multiple_trips = len(trips) > 1
-        order_by = ("trip__start", "id") if multiple_trips else ("id",)
+        if multiple_trips:
+            stops = StopTime.objects.filter(trip__in=trips).order_by(
+                "trip__start", "id"
+            )
+        else:
+            stops = trips[0].stoptime_set.order_by("id")
         stops = (
-            StopTime.objects.filter(trip__in=trips)
-            .select_related("stop__locality")
-            .defer(
+            stops.select_related("stop__locality").defer(
                 "stop__search_vector",
                 "stop__locality__search_vector",
                 "stop__locality__latlong",
             )
-            .order_by(*order_by)
             # .annotate(
             #     call_condition=Subquery(
             #         Call.objects.filter(
