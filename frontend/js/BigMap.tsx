@@ -509,7 +509,7 @@ function JourneySidebar(props: {
       ) : null}
       {journey.trip?.times ? (
         <TripTimetable
-          trip={{ times: journey.trip.times }}
+          trip={journey.trip}
           vehicle={props.vehicle}
           highlightedStop={props.highlightedStop}
           onMouseEnter={props.onMouseEnter}
